@@ -1,0 +1,8 @@
+{
+  "name": "School Library Portal System",
+  "description": "A full-stack school library management web app with librarian and student portals for catalog management, student search, book issuing, returns, overdue alerts, and fine calculations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
