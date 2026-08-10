@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
-import { students } from '../db/schema';
+import { students, issued_books } from '../db/schema';
 import { eq, ilike, or } from 'drizzle-orm';
 
 export const studentsRouter = Router();
@@ -29,11 +29,22 @@ studentsRouter.get('/', async (req: Request, res: Response) => {
         return rollA - rollB;
     });
 
-    res.json(allStudents.map(s => ({
-        ...s,
-        password: s.password_hash,
-        active_issues_count: 0
-    })));
+    const studentsWithCounts = [];
+    for (const s of allStudents) {
+        const activeIssues = await db.query.issued_books.findMany({
+            where: (issued_books, { and, eq, ne }) => and(
+                eq(issued_books.student_id, s.id),
+                ne(issued_books.status, 'returned')
+            )
+        });
+        studentsWithCounts.push({
+            ...s,
+            password: s.password_hash,
+            active_issues_count: activeIssues.length
+        });
+    }
+
+    res.json(studentsWithCounts);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -47,7 +58,7 @@ studentsRouter.post('/', async (req: Request, res: Response) => {
 
   try {
     const existing = await db.query.students.findFirst({ where: eq(students.library_card_no, library_card_no) });
-    if (existing) return res.status(400).json({ error: 'Username (Library Card No) already exists' });
+    if (existing) return res.status(400).json({ error: 'Username already exists' });
 
     const newStudent = await db.insert(students).values({
       name,
@@ -73,7 +84,7 @@ studentsRouter.put('/:id', async (req: Request, res: Response) => {
         if (library_card_no) {
             const existing = await db.query.students.findFirst({ where: eq(students.library_card_no, library_card_no) });
             if (existing && existing.id !== parseInt(req.params.id, 10)) {
-                return res.status(400).json({ error: 'Username (Library Card No) already exists' });
+                return res.status(400).json({ error: 'Username already exists' });
             }
         }
         

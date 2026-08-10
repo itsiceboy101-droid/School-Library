@@ -71,10 +71,10 @@ export default function App() {
         body: JSON.stringify({ card_no: cardNo, password: pass }),
       });
       const data = await res.json();
-      if (res.ok && data.student) {
+      if (res.ok && data.user) {
         setUserType('student');
-        setCurrentUser(data.student);
-        showToast(`Welcome, ${data.student.name}`);
+        setCurrentUser(data.user);
+        showToast(`Welcome, ${data.user.name}`);
         return { success: true };
       }
       return { success: false, error: data.error || 'Authentication failed' };

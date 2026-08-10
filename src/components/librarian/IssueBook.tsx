@@ -82,6 +82,9 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
       } else {
         onSuccessToast(data.message || `Book issued! Return due on ${data.due_date}`);
         setSelectedBookId('');
+        setSelectedStudentId('');
+        setStudentSearch('');
+        setBookSearch('');
         fetchData();
       }
     } catch (err: any) {

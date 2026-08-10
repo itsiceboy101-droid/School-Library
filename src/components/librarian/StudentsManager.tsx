@@ -396,6 +396,11 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                     type="text"
                     value={rollNo}
                     onChange={(e) => setRollNo(e.target.value.replace(/\D/g, ''))}
+                    onBlur={() => {
+                      if (rollNo.length === 1) {
+                        setRollNo('0' + rollNo);
+                      }
+                    }}
                     placeholder="25"
                     className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                   />

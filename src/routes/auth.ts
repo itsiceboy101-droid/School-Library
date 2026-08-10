@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { librarians, students } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, ilike } from 'drizzle-orm';
 
 export const authRouter = Router();
 
@@ -41,12 +41,12 @@ authRouter.post('/login-librarian', async (req: Request, res: Response) => {
 authRouter.post('/login-student', async (req: Request, res: Response) => {
   const { card_no, password } = req.body;
   if (!card_no || !password) {
-    return res.status(400).json({ error: 'Library card number and password required' });
+    return res.status(400).json({ error: 'Username and password are required' });
   }
 
   try {
     const student = await db.query.students.findFirst({
-      where: eq(students.library_card_no, card_no),
+      where: ilike(students.library_card_no, card_no),
     });
 
     if (!student || student.password_hash !== password) {

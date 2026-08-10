@@ -49,12 +49,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         if (!res.success) setError(res.error || 'Invalid staff credentials');
       } else {
         if (!cardNo || !password) {
-          setError('Please enter library card number and password');
+          setError('Please enter username and password');
           setLoading(false);
           return;
         }
         const res = await onLoginStudent(cardNo, password);
-        if (!res.success) setError(res.error || 'Invalid student library card or password');
+        if (!res.success) setError(res.error || 'Invalid username or password');
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
@@ -119,7 +119,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <p className="text-xs text-slate-500 mt-1">
               {platform === 'librarian'
                 ? 'Sign in with your registered Librarian email address to access the library system'
-                : 'Enter your student library card number to view your active borrowings and account status'}
+                : 'Enter your username to view your active borrowings and account status'}
             </p>
           </div>
 
@@ -157,7 +157,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   <input
                     type="text"
                     value={cardNo}
-                    onChange={(e) => setCardNo(e.target.value)}
+                    onChange={(e) => setCardNo(e.target.value.replace(/\s+/g, '-').toUpperCase())}
                     placeholder="e.g. STU101"
                     className="w-full pl-9 pr-3 py-2.5 bg-white/80 border border-blue-200 rounded-xl text-sm text-slate-800 placeholder-slate-400/60 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 uppercase font-semibold"
                   />

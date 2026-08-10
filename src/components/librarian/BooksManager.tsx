@@ -227,7 +227,9 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                     <tr key={b.id} className="hover:bg-blue-50/50 transition">
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-900 text-sm">{b.title}</div>
-                        <div className="text-slate-500 text-[11px]">by {b.author}</div>
+                        <div className="text-slate-500 text-[11px]">
+                          by {b.author} {b.publisher && <span className="ml-1 opacity-75">• {b.publisher}</span>}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg text-[11px] font-medium">
