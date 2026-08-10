@@ -6,6 +6,51 @@ import { getTodayStr, getStudentRestrictionStatus } from '../db/utils';
 
 export const issuesRouter = Router();
 
+issuesRouter.get('/', async (req: Request, res: Response) => {
+  try {
+    const today = getTodayStr();
+    const activeIssues = await db.query.issued_books.findMany({
+      where: ne(issued_books.status, 'returned')
+    });
+    
+    const result = [];
+    for (const ib of activeIssues) {
+      const student = await db.query.students.findFirst({ where: eq(students.id, ib.student_id) });
+      const book = await db.query.books.findFirst({ where: eq(books.id, ib.book_id) });
+      
+      const isOverdue = ib.due_date < today;
+      let daysOverdue = 0;
+      if (isOverdue) {
+        const due = new Date(ib.due_date);
+        const now = new Date(today);
+        const diffTime = Math.abs(now.getTime() - due.getTime());
+        daysOverdue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+
+      result.push({
+        id: ib.id,
+        book_id: ib.book_id,
+        student_id: ib.student_id,
+        student_name: student ? student.name : "Unknown",
+        student_card_no: student ? student.library_card_no : "",
+        student_class: student ? student.class : "",
+        student_division: student ? student.division : "",
+        student_roll_no: student ? student.roll_no : "",
+        book_title: book ? book.title : "Unknown",
+        book_author: book ? book.author : "",
+        issue_date: ib.issue_date,
+        due_date: ib.due_date,
+        status: isOverdue ? "overdue" : "issued",
+        days_overdue: daysOverdue,
+      });
+    }
+    
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 issuesRouter.post('/', async (req: Request, res: Response) => {
   const { student_id, book_id, return_days } = req.body;
   if (!student_id || !book_id) {

@@ -22,6 +22,7 @@ app.use('/api/librarians', librariansRouter);
 app.use('/api/books', booksRouter);
 app.use('/api/issue', issuesRouter);
 app.use('/api/return', issuesRouter);
+app.use('/api/issued-books', issuesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/student', studentPortalRouter);
 

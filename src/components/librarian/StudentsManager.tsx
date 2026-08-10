@@ -15,6 +15,7 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
   // Modal & Edit State
   const [isModalOpen, setIsModalOpen] = useState(openAddModalInitially);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
 
   // Table password visibility map
   const [visiblePasswords, setVisiblePasswords] = useState<{ [key: number]: boolean }>({});
@@ -140,21 +141,30 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
     }
   };
 
-  const handleDelete = async (id: number, studentName: string) => {
-    if (!window.confirm(`Are you sure you want to remove student record for ${studentName}?`)) return;
+  const handleDeleteClick = (student: Student) => {
+    setDeletingStudent(student);
+  };
 
+  const confirmDelete = async () => {
+    if (!deletingStudent) return;
     try {
-      const res = await fetch(`/api/students/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/students/${deletingStudent.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
-        onSuccessToast(`Student ${studentName} removed`);
+        onSuccessToast(`Student ${deletingStudent.name} removed`);
         fetchStudents();
       } else {
         console.error(data.error || 'Could not delete student');
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setDeletingStudent(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeletingStudent(null);
   };
 
   const filteredStudents = students.filter(
@@ -288,7 +298,7 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleDelete(s.id, s.name)}
+                              onClick={() => handleDeleteClick(s)}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 text-xs transition font-semibold"
                               title="Delete Student"
                             >
@@ -401,8 +411,8 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                   <input
                     type="text"
                     value={cardNo}
-                    onChange={(e) => setCardNo(e.target.value.toUpperCase())}
-                    placeholder="e.g. STU106"
+                    onChange={(e) => setCardNo(e.target.value.replace(/\s+/g, '-').toUpperCase())}
+                    placeholder="e.g. STU-106"
                     className="w-full pl-9 pr-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 uppercase font-mono font-semibold"
                   />
                 </div>
@@ -449,6 +459,32 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl p-6 overflow-hidden">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Student?</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Are you sure you want to remove the record for <span className="font-semibold text-slate-800">{deletingStudent.name}</span>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition"
+              >
+                Delete Student
+              </button>
+            </div>
           </div>
         </div>
       )}

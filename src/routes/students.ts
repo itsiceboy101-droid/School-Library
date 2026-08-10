@@ -31,6 +31,7 @@ studentsRouter.get('/', async (req: Request, res: Response) => {
 
     res.json(allStudents.map(s => ({
         ...s,
+        password: s.password_hash,
         active_issues_count: 0
     })));
   } catch (error: any) {
@@ -39,19 +40,22 @@ studentsRouter.get('/', async (req: Request, res: Response) => {
 });
 
 studentsRouter.post('/', async (req: Request, res: Response) => {
-  const { name, cls, division, roll_no, password } = req.body;
-  if (!name || !cls || !division || !roll_no || !password) {
+  const { name, class: cls, division, roll_no, password, library_card_no } = req.body;
+  if (!name || !cls || !division || !roll_no || !password || !library_card_no) {
     return res.status(400).json({ error: 'All student fields are required' });
   }
 
   try {
+    const existing = await db.query.students.findFirst({ where: eq(students.library_card_no, library_card_no) });
+    if (existing) return res.status(400).json({ error: 'Username (Library Card No) already exists' });
+
     const newStudent = await db.insert(students).values({
       name,
       class: cls,
       division,
       roll_no,
       password_hash: password,
-      library_card_no: `STU-${Math.floor(1000 + Math.random() * 9000)}`,
+      library_card_no,
     }).returning();
 
     res.status(201).json({
@@ -64,13 +68,21 @@ studentsRouter.post('/', async (req: Request, res: Response) => {
 });
 
 studentsRouter.put('/:id', async (req: Request, res: Response) => {
-    const { name, cls, division, roll_no, password } = req.body;
+    const { name, class: cls, division, roll_no, password, library_card_no } = req.body;
     try {
+        if (library_card_no) {
+            const existing = await db.query.students.findFirst({ where: eq(students.library_card_no, library_card_no) });
+            if (existing && existing.id !== parseInt(req.params.id, 10)) {
+                return res.status(400).json({ error: 'Username (Library Card No) already exists' });
+            }
+        }
+        
         const updated = await db.update(students).set({
             name,
             class: cls,
             division,
             roll_no,
+            ...(library_card_no ? { library_card_no } : {}),
             ...(password ? { password_hash: password } : {})
         }).where(eq(students.id, parseInt(req.params.id, 10))).returning();
         
