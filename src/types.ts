@@ -20,6 +20,7 @@ export interface Student {
   division: string;
   roll_no: string;
   library_card_no: string;
+  password?: string;
   created_at?: string;
   is_restricted?: boolean;
   restriction_reason?: string | null;
@@ -33,6 +34,7 @@ export interface Book {
   author: string;
   category?: string;
   isbn?: string;
+  publisher?: string;
   total_copies: number;
   available_copies: number;
   added_at?: string;

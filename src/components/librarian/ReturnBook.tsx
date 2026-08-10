@@ -39,7 +39,7 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
         onSuccessToast(data.message || `Returned "${data.book_title}" successfully.`);
         fetchIssuedBooks();
       } else {
-        alert(data.error || 'Failed to return book');
+        console.error(data.error || 'Failed to return book');
       }
     } catch (err) {
       console.error(err);

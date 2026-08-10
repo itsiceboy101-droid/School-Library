@@ -36,7 +36,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ student }) =
             </h1>
             <p className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">
               <span className="font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">
-                Card: {student.library_card_no}
+                Username: {student.library_card_no}
               </span>
               <span>Class {student.class} - Div {student.division}</span>
               <span>• Roll #{student.roll_no}</span>

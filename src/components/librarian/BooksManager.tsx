@@ -10,13 +10,16 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
+  const [searchType, setSearchType] = useState('all');
 
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [category, setCategory] = useState('');
   const [isbn, setIsbn] = useState('');
+  const [publisher, setPublisher] = useState('');
   const [totalCopies, setTotalCopies] = useState('5');
 
   const [saving, setSaving] = useState(false);
@@ -41,7 +44,31 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
     fetchBooks();
   }, []);
 
-  const handleAddBook = async (e: React.FormEvent) => {
+  const openAddModal = () => {
+    setEditingBook(null);
+    setTitle('');
+    setAuthor('');
+    setCategory('');
+    setIsbn('');
+    setPublisher('');
+    setTotalCopies('5');
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (b: Book) => {
+    setEditingBook(b);
+    setTitle(b.title);
+    setAuthor(b.author);
+    setCategory(b.category || '');
+    setIsbn(b.isbn || '');
+    setPublisher(b.publisher || '');
+    setTotalCopies(b.total_copies.toString());
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveBook = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -52,29 +79,36 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
 
     setSaving(true);
     try {
-      const res = await fetch('/api/books', {
-        method: 'POST',
+      const isEdit = !!editingBook;
+      const url = isEdit ? `/api/books/${editingBook.id}` : '/api/books';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
           author,
           category,
           isbn,
+          publisher,
           total_copies: totalCopies,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Failed to add book');
+        setError(data.error || `Failed to ${isEdit ? 'update' : 'add'} book`);
       } else {
-        onSuccessToast(`Book "${title}" added to library catalog`);
+        onSuccessToast(`Book "${title}" ${isEdit ? 'updated' : 'added'} successfully`);
         setIsModalOpen(false);
         setTitle('');
         setAuthor('');
         setCategory('');
         setIsbn('');
+        setPublisher('');
         setTotalCopies('5');
+        setEditingBook(null);
         fetchBooks();
       }
     } catch (err: any) {
@@ -85,7 +119,7 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
   };
 
   const handleDelete = async (id: number, bookTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${bookTitle}" from the library catalog?`)) return;
+    if (!window.confirm(`Are you sure you want to delete "${bookTitle}" from the library catalog?`)) return;
 
     try {
       const res = await fetch(`/api/books/${id}`, { method: 'DELETE' });
@@ -94,19 +128,30 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
         onSuccessToast(`Book "${bookTitle}" removed`);
         fetchBooks();
       } else {
-        alert(data.error || 'Could not delete book');
+        // Use toast or console instead of alert
+        console.error(data.error || 'Could not delete book');
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const filteredBooks = books.filter(
-    (b) =>
-      b.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      b.author.toLowerCase().includes(searchFilter.toLowerCase()) ||
-      (b.category && b.category.toLowerCase().includes(searchFilter.toLowerCase()))
-  );
+  const filteredBooks = books.filter((b) => {
+    const term = searchFilter.toLowerCase();
+    if (!term) return true;
+    
+    if (searchType === 'title') return b.title.toLowerCase().includes(term);
+    if (searchType === 'author') return b.author.toLowerCase().includes(term);
+    if (searchType === 'publisher') return b.publisher && b.publisher.toLowerCase().includes(term);
+    if (searchType === 'category') return b.category && b.category.toLowerCase().includes(term);
+    
+    return (
+      b.title.toLowerCase().includes(term) ||
+      b.author.toLowerCase().includes(term) ||
+      (b.publisher && b.publisher.toLowerCase().includes(term)) ||
+      (b.category && b.category.toLowerCase().includes(term))
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -123,19 +168,32 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-            <input
-              type="text"
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Search title, author, category..."
-              className="w-full pl-9 pr-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500"
-            />
+          <div className="flex bg-white border border-blue-200 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+            <select
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="bg-sky-50/50 border-r border-blue-200 px-3 py-2 text-xs font-medium text-slate-600 focus:outline-none"
+            >
+              <option value="all">All</option>
+              <option value="title">Title</option>
+              <option value="author">Author</option>
+              <option value="category">Category</option>
+              <option value="publisher">Publisher</option>
+            </select>
+            <div className="relative flex-1 sm:w-64">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                placeholder="Search catalog..."
+                className="w-full pl-9 pr-3 py-2 bg-transparent text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+              />
+            </div>
           </div>
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={openAddModal}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition shrink-0"
           >
             <PlusCircle className="w-4 h-4" />
@@ -195,14 +253,23 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleDelete(b.id, b.title)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.2 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 text-xs transition"
-                          title="Delete Book"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Delete
-                        </button>
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <button
+                            onClick={() => openEditModal(b)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.2 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 text-xs transition"
+                            title="Edit Book Details"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(b.id, b.title)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.2 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 text-xs transition"
+                            title="Delete Book"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -213,7 +280,7 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
         )}
       </div>
 
-      {/* Add Book Modal */}
+      {/* Add/Edit Book Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white border border-blue-200 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
@@ -229,8 +296,12 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                 <PlusCircle className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Add New Book Title</h3>
-                <p className="text-xs text-slate-500">Add to school library catalog inventory</p>
+                <h3 className="text-lg font-bold text-slate-900">
+                  {editingBook ? 'Edit Book Details' : 'Add New Book Title'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {editingBook ? 'Update details in school library catalog' : 'Add to school library catalog inventory'}
+                </p>
               </div>
             </div>
 
@@ -241,7 +312,7 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
               </div>
             )}
 
-            <form onSubmit={handleAddBook} className="space-y-4">
+            <form onSubmit={handleSaveBook} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Book Title
@@ -273,13 +344,25 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Category / Genre
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    placeholder="Fiction, Science..."
                     className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                  />
+                  >
+                    <option value="">Select Category...</option>
+                    <option value="Fiction">Fiction</option>
+                    <option value="Non-Fiction">Non-Fiction</option>
+                    <option value="Science">Science</option>
+                    <option value="History">History</option>
+                    <option value="Math">Math</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Literature">Literature</option>
+                    <option value="Art">Art</option>
+                    <option value="Philosophy">Philosophy</option>
+                    <option value="Biography">Biography</option>
+                    <option value="Children">Children</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
 
                 <div>
@@ -300,17 +383,31 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  ISBN Number (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={isbn}
-                  onChange={(e) => setIsbn(e.target.value)}
-                  placeholder="e.g. 978-0061120084"
-                  className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Publisher (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={publisher}
+                    onChange={(e) => setPublisher(e.target.value)}
+                    placeholder="e.g. Penguin Random House"
+                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    ISBN Number (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={isbn}
+                    onChange={(e) => setIsbn(e.target.value)}
+                    placeholder="e.g. 978-0061120084"
+                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                  />
+                </div>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-3">
@@ -326,7 +423,7 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                   disabled={saving}
                   className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition disabled:opacity-50"
                 >
-                  {saving ? 'Adding...' : 'Add Book to Catalog'}
+                  {saving ? 'Saving...' : editingBook ? 'Save Changes' : 'Add Book to Catalog'}
                 </button>
               </div>
             </form>

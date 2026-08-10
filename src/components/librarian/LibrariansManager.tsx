@@ -92,7 +92,7 @@ export const LibrariansManager: React.FC<LibrariansManagerProps> = ({ onSuccessT
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete librarian account "${libName}"?`)) {
+    if (!window.confirm(`Are you sure you want to delete librarian account "${libName}"?`)) {
       return;
     }
 
@@ -103,11 +103,10 @@ export const LibrariansManager: React.FC<LibrariansManagerProps> = ({ onSuccessT
         onSuccessToast(data.message || 'Librarian account removed');
         fetchLibrarians();
       } else {
-        alert(data.error || 'Failed to delete librarian');
+        console.error(data.error || 'Failed to delete librarian');
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to delete librarian');
     }
   };
 

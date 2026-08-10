@@ -1,0 +1,27 @@
+{
+  "librarians": [
+    {
+      "id": 1,
+      "name": "Teacher Access",
+      "email": "teacher@school.com",
+      "password_hash": "Pass@321@123",
+      "role": "head_librarian"
+    }
+  ],
+  "students": [
+    {
+      "id": 1,
+      "name": "Kunal",
+      "class": "9",
+      "division": "C",
+      "roll_no": "35",
+      "library_card_no": "STU001",
+      "password_hash": "Pass@321"
+    }
+  ],
+  "books": [],
+  "issuedBooks": [],
+  "nextStudentId": 2,
+  "nextBookId": 2,
+  "nextIssueId": 1
+}

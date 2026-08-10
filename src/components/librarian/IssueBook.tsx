@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react';
+import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown, Search } from 'lucide-react';
 import { Student, Book } from '../../types';
 
 interface IssueBookProps {
@@ -118,62 +118,68 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <UserCheck className="w-4 h-4 text-blue-600" />
-              Select Student
+              Search & Select Student
             </label>
             <div className="relative">
-              <div 
-                className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 cursor-text flex items-center justify-between"
-                onClick={() => setIsStudentOpen(true)}
-              >
-                <div className="flex-1 overflow-hidden">
-                  {!isStudentOpen && !studentSearch && !selectedStudentId ? (
-                    <span className="text-slate-500">-- Choose Student --</span>
-                  ) : (
-                    <input
-                      type="text"
-                      value={studentSearch}
-                      onChange={(e) => {
-                        setStudentSearch(e.target.value);
-                        setIsStudentOpen(true);
-                        setSelectedStudentId('');
-                      }}
-                      onFocus={() => setIsStudentOpen(true)}
-                      placeholder={selectedStudent ? selectedStudent.name : "-- Choose Student --"}
-                      className="w-full bg-transparent focus:outline-none placeholder-slate-500"
-                    />
-                  )}
-                </div>
-                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 z-10" />
+                <input
+                  type="text"
+                  value={studentSearch}
+                  onChange={(e) => {
+                    setStudentSearch(e.target.value);
+                    setIsStudentOpen(true);
+                    setSelectedStudentId('');
+                  }}
+                  onFocus={() => setIsStudentOpen(true)}
+                  placeholder="Type student name, username, or class..."
+                  className="w-full pl-10 pr-9 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
+                />
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
               </div>
               
               {isStudentOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-blue-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-20 w-full mt-1 bg-white border border-blue-200 rounded-xl shadow-lg max-h-60 overflow-y-auto divide-y divide-slate-100">
                   <div 
-                    className="px-3.5 py-2 text-sm text-slate-500 hover:bg-blue-50 cursor-pointer"
+                    className="px-3.5 py-2 text-xs text-slate-400 hover:bg-slate-50 cursor-pointer italic"
                     onClick={() => {
                       setSelectedStudentId('');
                       setStudentSearch('');
                       setIsStudentOpen(false);
                     }}
                   >
-                    -- Choose Student --
+                    -- Clear Selection --
                   </div>
                   {students
                     .filter(s => 
                       s.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
-                      s.library_card_no.toLowerCase().includes(studentSearch.toLowerCase())
+                      s.library_card_no.toLowerCase().includes(studentSearch.toLowerCase()) ||
+                      s.class.toLowerCase().includes(studentSearch.toLowerCase())
                     )
                     .map((s) => (
                     <div 
                       key={s.id}
                       onClick={() => {
                         setSelectedStudentId(s.id.toString());
-                        setStudentSearch(s.name);
+                        setStudentSearch(`${s.name} (${s.library_card_no})`);
                         setIsStudentOpen(false);
                       }}
-                      className="px-3.5 py-2 text-sm text-slate-800 hover:bg-blue-50 cursor-pointer border-t border-slate-100"
+                      className="px-3.5 py-2.5 text-xs text-slate-800 hover:bg-blue-50 cursor-pointer flex items-center justify-between"
                     >
-                      {s.name} ({s.library_card_no}) - Class {s.class}-{s.division} (#{s.roll_no}) {s.is_restricted ? '⛔ RESTRICTED' : ''}
+                      <div>
+                        <span className="font-bold text-slate-900">{s.name}</span>
+                        <span className="ml-2 font-mono text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">
+                          {s.library_card_no}
+                        </span>
+                        <span className="ml-2 text-slate-500 text-[11px]">
+                          Class {s.class}-{s.division} (Roll #{s.roll_no})
+                        </span>
+                      </div>
+                      {s.is_restricted && (
+                        <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 shrink-0">
+                          RESTRICTED
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -210,50 +216,44 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <BookOpen className="w-4 h-4 text-blue-600" />
-              Select Book
+              Search & Select Book
             </label>
             <div className="relative">
-              <div 
-                className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 cursor-text flex items-center justify-between"
-                onClick={() => setIsBookOpen(true)}
-              >
-                <div className="flex-1 overflow-hidden">
-                  {!isBookOpen && !bookSearch && !selectedBookId ? (
-                    <span className="text-slate-500">-- Choose Book --</span>
-                  ) : (
-                    <input
-                      type="text"
-                      value={bookSearch}
-                      onChange={(e) => {
-                        setBookSearch(e.target.value);
-                        setIsBookOpen(true);
-                        setSelectedBookId('');
-                      }}
-                      onFocus={() => setIsBookOpen(true)}
-                      placeholder={selectedBook ? selectedBook.title : "-- Choose Book --"}
-                      className="w-full bg-transparent focus:outline-none placeholder-slate-500"
-                    />
-                  )}
-                </div>
-                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 z-10" />
+                <input
+                  type="text"
+                  value={bookSearch}
+                  onChange={(e) => {
+                    setBookSearch(e.target.value);
+                    setIsBookOpen(true);
+                    setSelectedBookId('');
+                  }}
+                  onFocus={() => setIsBookOpen(true)}
+                  placeholder="Type book title, author, category, or publisher..."
+                  className="w-full pl-10 pr-9 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
+                />
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
               </div>
               
               {isBookOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-blue-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-20 w-full mt-1 bg-white border border-blue-200 rounded-xl shadow-lg max-h-60 overflow-y-auto divide-y divide-slate-100">
                   <div 
-                    className="px-3.5 py-2 text-sm text-slate-500 hover:bg-blue-50 cursor-pointer"
+                    className="px-3.5 py-2 text-xs text-slate-400 hover:bg-slate-50 cursor-pointer italic"
                     onClick={() => {
                       setSelectedBookId('');
                       setBookSearch('');
                       setIsBookOpen(false);
                     }}
                   >
-                    -- Choose Book --
+                    -- Clear Selection --
                   </div>
                   {books
                     .filter(b => 
                       b.title.toLowerCase().includes(bookSearch.toLowerCase()) || 
-                      b.author.toLowerCase().includes(bookSearch.toLowerCase())
+                      b.author.toLowerCase().includes(bookSearch.toLowerCase()) ||
+                      (b.publisher && b.publisher.toLowerCase().includes(bookSearch.toLowerCase())) ||
+                      (b.category && b.category.toLowerCase().includes(bookSearch.toLowerCase()))
                     )
                     .map((b) => (
                     <div 
@@ -264,9 +264,20 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                         setBookSearch(b.title);
                         setIsBookOpen(false);
                       }}
-                      className={`px-3.5 py-2 text-sm border-t border-slate-100 ${b.available_copies < 1 ? 'text-slate-400 bg-slate-50 cursor-not-allowed' : 'text-slate-800 hover:bg-blue-50 cursor-pointer'}`}
+                      className={`px-3.5 py-2.5 text-xs flex items-center justify-between ${b.available_copies < 1 ? 'text-slate-400 bg-slate-50 cursor-not-allowed' : 'text-slate-800 hover:bg-blue-50 cursor-pointer'}`}
                     >
-                      {b.title} by {b.author} ({b.available_copies}/{b.total_copies} available)
+                      <div>
+                        <span className="font-bold text-slate-900">{b.title}</span>
+                        <span className="ml-2 text-slate-500 text-[11px]">by {b.author}</span>
+                        {b.publisher && (
+                          <span className="ml-2 text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                            {b.publisher}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${b.available_copies > 0 ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-600'}`}>
+                        {b.available_copies} / {b.total_copies} available
+                      </span>
                     </div>
                   ))}
                 </div>
