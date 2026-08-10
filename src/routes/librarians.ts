@@ -48,11 +48,16 @@ librariansRouter.post('/', async (req: Request, res: Response) => {
 
 librariansRouter.delete('/:id', async (req: Request, res: Response) => {
   const id = parseInt(req.params.id, 10);
-  if (id === 1) {
-    return res.status(400).json({ error: 'Cannot delete master account' });
-  }
 
   try {
+    const librarian = await db.query.librarians.findFirst({ where: eq(librarians.id, id) });
+    if (!librarian) {
+      return res.status(404).json({ error: 'Librarian not found' });
+    }
+    if (librarian.email === 'teacher@school.com' || librarian.role === 'head_librarian') {
+      return res.status(400).json({ error: 'Cannot delete master account' });
+    }
+
     const deleted = await db.delete(librarians).where(eq(librarians.id, id)).returning();
     if (deleted.length === 0) {
       return res.status(404).json({ error: 'Librarian not found' });

@@ -13,7 +13,10 @@ authRouter.post('/login-librarian', async (req: Request, res: Response) => {
 
   try {
     const user = await db.query.librarians.findFirst({
-      where: eq(librarians.email, email),
+      where: (librarians, { eq, or }) => or(
+          eq(librarians.email, email),
+          eq(librarians.name, email)
+      ),
     });
 
     if (!user || user.password_hash !== password) {
