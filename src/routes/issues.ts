@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
-import { books, issued_books, students } from '../db/schema';
+import { books, issued_books, students, teachers } from '../db/schema';
 import { eq, and, ne } from 'drizzle-orm';
 import { getTodayStr, getStudentRestrictionStatus } from '../db/utils';
 
@@ -15,7 +15,30 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
     
     const result = [];
     for (const ib of activeIssues) {
-      const student = await db.query.students.findFirst({ where: eq(students.id, ib.student_id) });
+      let studentName = "Unknown";
+      let studentCard = "";
+      let studentClass = "";
+      let studentDiv = "";
+      let studentRoll = "";
+      
+      if (ib.teacher_id) {
+        const teacher = await db.query.teachers.findFirst({ where: eq(teachers.id, ib.teacher_id) });
+        if (teacher) {
+            studentName = teacher.name + " (Teacher)";
+            studentCard = teacher.username;
+            studentClass = teacher.assigned_class ? `Class ${teacher.assigned_class}` : "Staff";
+        }
+      } else if (ib.student_id) {
+        const student = await db.query.students.findFirst({ where: eq(students.id, ib.student_id) });
+        if (student) {
+            studentName = student.name;
+            studentCard = student.library_card_no;
+            studentClass = student.class;
+            studentDiv = student.division;
+            studentRoll = student.roll_no;
+        }
+      }
+
       const book = await db.query.books.findFirst({ where: eq(books.id, ib.book_id) });
       
       const isOverdue = ib.due_date < today;
@@ -31,11 +54,12 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
         id: ib.id,
         book_id: ib.book_id,
         student_id: ib.student_id,
-        student_name: student ? student.name : "Unknown",
-        student_card_no: student ? student.library_card_no : "",
-        student_class: student ? student.class : "",
-        student_division: student ? student.division : "",
-        student_roll_no: student ? student.roll_no : "",
+        teacher_id: ib.teacher_id,
+        student_name: studentName,
+        student_card_no: studentCard,
+        student_class: studentClass,
+        student_division: studentDiv,
+        student_roll_no: studentRoll,
         book_title: book ? book.title : "Unknown",
         book_author: book ? book.author : "",
         issue_date: ib.issue_date,
@@ -133,12 +157,21 @@ issuesRouter.post('/:issueId', async (req: Request, res: Response) => {
       }
 
       const today = getTodayStr();
-      const student = await db.query.students.findFirst({ where: eq(students.id, record.student_id) });
-      const book = await db.query.books.findFirst({ where: eq(books.id, record.book_id) });
+      let borrowerName = "Unknown";
+      let isTeacher = !!record.teacher_id;
+      if (isTeacher) {
+        const teacher = await db.query.teachers.findFirst({ where: eq(teachers.id, record.teacher_id) });
+        if (teacher) borrowerName = teacher.name;
+      } else {
+        const student = await db.query.students.findFirst({ where: eq(students.id, record.student_id) });
+        if (student) borrowerName = student.name;
+      }
 
+      const book = await db.query.books.findFirst({ where: eq(books.id, record.book_id) });
+      
       const isLate = today > record.due_date;
       let banUntilDate: string | null = null;
-      if (isLate) {
+      if (isLate && !isTeacher) {
         const retDate = new Date(today);
         retDate.setDate(retDate.getDate() + 14);
         banUntilDate = retDate.toISOString().split("T")[0];
@@ -158,14 +191,16 @@ issuesRouter.post('/:issueId', async (req: Request, res: Response) => {
 
       if (isLate) {
         res.json({
-          message: `Book "${book ? book.title : ''}" returned late. ${student ? student.name : 'Student'} is now under a 2-week borrowing ban until ${banUntilDate}.`,
+          message: isTeacher ? 
+            `Book "${book?.title}" returned late by Teacher ${borrowerName}. (No ban applied to teachers).` :
+            `Book "${book?.title}" returned late. ${borrowerName} is now under a 2-week borrowing ban until ${banUntilDate}.`,
           is_late: true,
           ban_until: banUntilDate,
           book_title: book ? book.title : "",
         });
       } else {
         res.json({
-          message: `Book "${book ? book.title : ''}" returned on time successfully! ${student ? student.name : 'Student'} remains eligible to borrow.`,
+          message: `Book "${book?.title}" returned successfully by ${borrowerName}!`,
           is_late: false,
           ban_until: null,
           book_title: book ? book.title : "",

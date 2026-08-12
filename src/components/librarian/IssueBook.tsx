@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown, Search } from 'lucide-react';
-import { Student, Book } from '../../types';
+import { Student, Book, Teacher } from '../../types';
 
 interface IssueBookProps {
   preselectedStudent?: Student | null;
@@ -9,9 +9,11 @@ interface IssueBookProps {
 
 export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSuccessToast }) => {
   const [students, setStudents] = useState<Student[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
 
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [selectedBookId, setSelectedBookId] = useState<string>('');
   const [returnDays, setReturnDays] = useState<number>(14);
   
@@ -25,14 +27,17 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
 
   const fetchData = async () => {
     try {
-      const [resStu, resBks] = await Promise.all([
+      const [resStu, resTea, resBks] = await Promise.all([
         fetch('/api/students'),
+        fetch('/api/teachers'),
         fetch('/api/books'),
       ]);
-      if (resStu.ok && resBks.ok) {
+      if (resStu.ok && resTea.ok && resBks.ok) {
         const stuData = await resStu.json();
+        const teaData = await resTea.json();
         const bksData = await resBks.json();
         setStudents(stuData);
+        setTeachers(teaData);
         setBooks(bksData);
 
         if (preselectedStudent) {
@@ -50,13 +55,19 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
 
   const selectedBook = books.find((b) => b.id.toString() === selectedBookId);
   const selectedStudent = students.find((s) => s.id.toString() === selectedStudentId);
+  const selectedTeacher = teachers.find((t) => t.id.toString() === selectedTeacherId);
+  
+  const allBorrowers = [
+    ...students.map(s => ({ ...s, type: 'student' as const })),
+    ...teachers.map(t => ({ ...t, type: 'teacher' as const }))
+  ];
 
   const handleIssue = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!selectedStudentId) {
-      setError('Please select a student');
+    if (!selectedStudentId && !selectedTeacherId) {
+      setError('Please select a borrower');
       return;
     }
     if (!selectedBookId) {
@@ -70,7 +81,8 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          student_id: selectedStudentId,
+          student_id: selectedStudentId || undefined,
+          teacher_id: selectedTeacherId || undefined,
           book_id: selectedBookId,
           return_days: returnDays,
         }),
@@ -83,6 +95,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
         onSuccessToast(data.message || `Book issued! Return due on ${data.due_date}`);
         setSelectedBookId('');
         setSelectedStudentId('');
+        setSelectedTeacherId('');
         setStudentSearch('');
         setBookSearch('');
         fetchData();
@@ -121,7 +134,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <UserCheck className="w-4 h-4 text-blue-600" />
-              Search & Select Student
+              Search & Select Borrower (Student / Teacher)
             </label>
             <div className="relative">
               <div className="relative flex items-center">
@@ -133,9 +146,10 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                     setStudentSearch(e.target.value);
                     setIsStudentOpen(true);
                     setSelectedStudentId('');
+                    setSelectedTeacherId('');
                   }}
                   onFocus={() => setIsStudentOpen(true)}
-                  placeholder="Type student name, username, or class..."
+                  placeholder="Type borrower name, username, or class..."
                   className="w-full pl-10 pr-9 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
                 />
                 <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
@@ -147,38 +161,49 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                     className="px-3.5 py-2 text-xs text-slate-400 hover:bg-slate-50 cursor-pointer italic"
                     onClick={() => {
                       setSelectedStudentId('');
+                      setSelectedTeacherId('');
                       setStudentSearch('');
                       setIsStudentOpen(false);
                     }}
                   >
                     -- Clear Selection --
                   </div>
-                  {students
-                    .filter(s => 
-                      s.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
-                      s.library_card_no.toLowerCase().includes(studentSearch.toLowerCase()) ||
-                      s.class.toLowerCase().includes(studentSearch.toLowerCase())
+                  {allBorrowers
+                    .filter(b => 
+                      b.name.toLowerCase().includes(studentSearch.toLowerCase()) || 
+                      (b.type === 'student' ? b.library_card_no.toLowerCase().includes(studentSearch.toLowerCase()) : b.username.toLowerCase().includes(studentSearch.toLowerCase())) ||
+                      (b.type === 'student' ? b.class.toLowerCase().includes(studentSearch.toLowerCase()) : 'teacher'.includes(studentSearch.toLowerCase()))
                     )
-                    .map((s) => (
+                    .map((b) => (
                     <div 
-                      key={s.id}
+                      key={`${b.type}-${b.id}`}
                       onClick={() => {
-                        setSelectedStudentId(s.id.toString());
-                        setStudentSearch(`${s.name} (${s.library_card_no})`);
+                        if (b.type === 'student') {
+                          setSelectedStudentId(b.id.toString());
+                          setSelectedTeacherId('');
+                          setStudentSearch(`${b.name} (${b.library_card_no})`);
+                        } else {
+                          setSelectedTeacherId(b.id.toString());
+                          setSelectedStudentId('');
+                          setStudentSearch(`${b.name} (${b.username})`);
+                        }
                         setIsStudentOpen(false);
                       }}
                       className="px-3.5 py-2.5 text-xs text-slate-800 hover:bg-blue-50 cursor-pointer flex items-center justify-between"
                     >
                       <div>
-                        <span className="font-bold text-slate-900">{s.name}</span>
-                        <span className="ml-2 font-mono text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">
-                          {s.library_card_no}
+                        <span className="font-bold text-slate-900">{b.name}</span>
+                        <span className={`ml-2 font-mono px-1.5 py-0.5 rounded text-[10px] font-bold ${b.type === 'teacher' ? 'text-amber-700 bg-amber-50' : 'text-blue-700 bg-blue-50'}`}>
+                          {b.type === 'teacher' ? b.username : b.library_card_no}
                         </span>
                         <span className="ml-2 text-slate-500 text-[11px]">
-                          Class {s.class}-{s.division} (Roll #{s.roll_no})
+                          {b.type === 'student' ? `Class ${b.class}-${b.division} (Roll #${b.roll_no})` : (b.assigned_class ? `Class ${b.assigned_class}` : 'Staff')}
+                        </span>
+                        <span className={`ml-2 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${b.type === 'teacher' ? 'text-amber-600 bg-amber-100 border border-amber-200' : 'hidden'}`}>
+                          Teacher
                         </span>
                       </div>
-                      {s.is_restricted && (
+                      {b.type === 'student' && b.is_restricted && (
                         <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 shrink-0">
                           RESTRICTED
                         </span>

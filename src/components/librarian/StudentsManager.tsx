@@ -7,6 +7,9 @@ interface StudentsManagerProps {
   openAddModalInitially?: boolean;
 }
 
+const CLASSES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+const DIVISIONS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
 export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast, openAddModalInitially = false }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
@@ -368,25 +371,31 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Class
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={cls}
-                    onChange={(e) => setCls(e.target.value.replace(/\D/g, ''))}
-                    placeholder="10"
+                    onChange={(e) => setCls(e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                  />
+                  >
+                    <option value="">-- None --</option>
+                    {CLASSES.map((c) => (
+                      <option key={c} value={c}>Class {c}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Division
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={division}
-                    onChange={(e) => setDivision(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
-                    placeholder="A"
-                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 uppercase font-semibold"
-                  />
+                    onChange={(e) => setDivision(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-semibold"
+                  >
+                    <option value="">-- None --</option>
+                    {DIVISIONS.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">

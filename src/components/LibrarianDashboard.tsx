@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, BookPlus, ArrowDownLeft, Users, BookOpen, FileText } from 'lucide-react';
+import { Search, BookPlus, ArrowDownLeft, Users, BookOpen, FileText, ArrowLeftRight } from 'lucide-react';
 import { User as LibrarianUser, Student } from '../types';
 import { StudentSearch } from './librarian/StudentSearch';
 import { IssueBook } from './librarian/IssueBook';
@@ -13,10 +13,11 @@ interface LibrarianDashboardProps {
   onSuccessToast: (msg: string) => void;
 }
 
-type TabType = 'search' | 'issue' | 'return' | 'students' | 'books' | 'reports';
+type TabType = 'search' | 'desk' | 'students' | 'books' | 'reports';
 
 export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ user, onSuccessToast }) => {
   const [activeTab, setActiveTab] = useState<TabType>('search');
+  const [deskSubTab, setDeskSubTab] = useState<'issue' | 'return'>('issue');
   const [preselectedStudent, setPreselectedStudent] = useState<Student | null>(null);
 
   const handleQuickIssue = (student: Student) => {
@@ -26,8 +27,7 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ user, on
 
   const navItems: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'search', label: 'Search Student', icon: <Search className="w-4 h-4" /> },
-    { id: 'issue', label: 'Issue Book', icon: <BookPlus className="w-4 h-4" /> },
-    { id: 'return', label: 'Return Book', icon: <ArrowDownLeft className="w-4 h-4" /> },
+    { id: 'desk', label: 'Issue & Return Desk', icon: <ArrowLeftRight className="w-4 h-4" /> },
     { id: 'students', label: 'Students Directory', icon: <Users className="w-4 h-4" /> },
     { id: 'books', label: 'Book Catalog', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'reports', label: 'Reports', icon: <FileText className="w-4 h-4" /> },
@@ -59,13 +59,42 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ user, on
       {/* Tab Content */}
       <div>
         {activeTab === 'search' && <StudentSearch onQuickIssue={handleQuickIssue} />}
-        {activeTab === 'issue' && (
-          <IssueBook
-            preselectedStudent={preselectedStudent}
-            onSuccessToast={onSuccessToast}
-          />
+        {activeTab === 'desk' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-center gap-2 bg-white border border-blue-200 p-1.5 rounded-2xl max-w-sm mx-auto shadow-xs">
+              <button
+                onClick={() => setDeskSubTab('issue')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                  deskSubTab === 'issue'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BookPlus className="w-4 h-4 inline-block mr-1" />
+                Issue Book
+              </button>
+              <button
+                onClick={() => setDeskSubTab('return')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                  deskSubTab === 'return'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <ArrowDownLeft className="w-4 h-4 inline-block mr-1" />
+                Return Book
+              </button>
+            </div>
+            {deskSubTab === 'issue' ? (
+              <IssueBook
+                preselectedStudent={preselectedStudent}
+                onSuccessToast={onSuccessToast}
+              />
+            ) : (
+              <ReturnBook onSuccessToast={onSuccessToast} />
+            )}
+          </div>
         )}
-        {activeTab === 'return' && <ReturnBook onSuccessToast={onSuccessToast} />}
         {activeTab === 'students' && <StudentsManager onSuccessToast={onSuccessToast} />}
         {activeTab === 'books' && <BooksManager onSuccessToast={onSuccessToast} />}
         {activeTab === 'reports' && <ReportsManager />}

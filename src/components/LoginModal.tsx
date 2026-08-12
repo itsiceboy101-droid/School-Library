@@ -41,7 +41,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       if (platform === 'librarian') {
         if (!emailOrPass || !password) {
-          setError('Please enter Email / ID Name and Password');
+          setError('Please enter Username/Email and Password');
           setLoading(false);
           return;
         }
@@ -78,7 +78,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             }`}
           >
             <Shield className="w-4 h-4" />
-            Librarian & Staff Portal
+            Librarian & Teacher Portal
           </button>
 
           <button
@@ -113,13 +113,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
 
             <h2 className="text-xl font-bold text-slate-900">
-              {platform === 'librarian' ? 'Librarian & Staff Login' : 'Student Portal Access'}
+              {platform === 'librarian' ? 'Librarian & Teacher Login' : 'Student Portal Access'}
             </h2>
 
             <p className="text-xs text-slate-500 mt-1">
               {platform === 'librarian'
-                ? 'Sign in with your registered Librarian email address to access the library system'
-                : 'Enter your username to view your active borrowings and account status'}
+                ? 'Sign in with your registered Librarian or Teacher email/username to access the system'
+                : 'Enter your student username to view active borrowings and account status'}
             </p>
           </div>
 
@@ -134,7 +134,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             {platform === 'librarian' ? (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Librarian Email
+                  Username/Email
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400/80 absolute left-3 top-3" />
@@ -142,7 +142,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     type="text"
                     value={emailOrPass}
                     onChange={(e) => setEmailOrPass(e.target.value)}
-                    placeholder="librarian@school.com"
+                    placeholder="admin@school.com or teacher username"
                     className="w-full pl-9 pr-3 py-2.5 bg-white/80 border border-blue-200 rounded-xl text-sm text-slate-800 placeholder-slate-400/60 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
                   />
                 </div>

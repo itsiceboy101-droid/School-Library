@@ -1,10 +1,10 @@
 import React from 'react';
-import { BookOpen, User, LogOut, Shield, GraduationCap, RotateCcw, Sparkles } from 'lucide-react';
-import { User as LibrarianUser, Student } from '../types';
+import { BookOpen, User, LogOut, Shield, GraduationCap, RotateCcw, Sparkles, School } from 'lucide-react';
+import { User as LibrarianUser, Student, Teacher } from '../types';
 
 interface HeaderProps {
-  userType: 'librarian' | 'student' | null;
-  currentUser: LibrarianUser | Student | null;
+  userType: 'librarian' | 'student' | 'teacher' | null;
+  currentUser: LibrarianUser | Student | Teacher | null;
   onLogout: () => void;
   onSwitchPortal: (role: 'librarian' | 'student') => void;
   onQuickLogin: (role: 'librarian' | 'student', idOrEmail?: string) => void;
@@ -39,6 +39,12 @@ export const Header: React.FC<HeaderProps> = ({
                   Librarian Portal
                 </span>
               )}
+              {userType === 'teacher' && (
+                <span className="text-[9px] sm:text-[10px] uppercase font-semibold tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 flex items-center gap-1">
+                  <School className="w-3 h-3 text-emerald-600" />
+                  Teacher Portal
+                </span>
+              )}
               {userType === 'student' && (
                 <span className="text-[9px] sm:text-[10px] uppercase font-semibold tracking-wider bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                   Student Portal
@@ -50,6 +56,8 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'Central Head Analytics & Staff Control'
                 : userType === 'librarian'
                 ? 'Catalog Management & Issue Desk'
+                : userType === 'teacher'
+                ? 'Class Student Roster & Catalog Search'
                 : userType === 'student'
                 ? 'My Borrowed Books & Fine Status'
                 : 'Central School Library System'}
@@ -66,6 +74,8 @@ export const Header: React.FC<HeaderProps> = ({
                   className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
                     userType === 'librarian'
                       ? 'bg-blue-600 text-white'
+                      : userType === 'teacher'
+                      ? 'bg-emerald-600 text-white'
                       : 'bg-sky-600 text-white'
                   }`}
                 >
@@ -78,7 +88,9 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="text-[11px] text-slate-500">
                     {userType === 'librarian'
                       ? (currentUser as LibrarianUser).email
-                      : `Card: ${(currentUser as Student).library_card_no} | Class ${(currentUser as Student).class}-${(currentUser as Student).division}`}
+                      : userType === 'teacher'
+                      ? `ID: ${(currentUser as Teacher).username} ${(currentUser as Teacher).assigned_class ? `| Class ${(currentUser as Teacher).assigned_class}-${(currentUser as Teacher).assigned_division}` : ''}`
+                      : `Username: ${(currentUser as Student).library_card_no} | Class ${(currentUser as Student).class}-${(currentUser as Student).division}`}
                   </div>
                 </div>
               </div>
@@ -97,3 +109,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

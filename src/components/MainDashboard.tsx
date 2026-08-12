@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { BarChart3, ShieldCheck, Users, BookOpen, ArrowLeftRight, UserPlus, Sparkles, BookPlus } from 'lucide-react';
+import { BarChart3, ShieldCheck, Users, BookOpen, ArrowLeftRight, UserPlus, Sparkles, School } from 'lucide-react';
 import { User as LibrarianUser, Student } from '../types';
 import { ReportsManager } from './librarian/ReportsManager';
 import { LibrariansManager } from './librarian/LibrariansManager';
 import { StudentsManager } from './librarian/StudentsManager';
+import { TeachersManager } from './librarian/TeachersManager';
 import { BooksManager } from './librarian/BooksManager';
 import { IssueBook } from './librarian/IssueBook';
 import { ReturnBook } from './librarian/ReturnBook';
@@ -13,13 +14,17 @@ interface MainDashboardProps {
   onSuccessToast: (msg: string) => void;
 }
 
-type MainTab = 'analytics' | 'librarians' | 'students' | 'books' | 'desk';
+type MainTab = 'analytics' | 'teachers' | 'librarians' | 'students' | 'books' | 'desk';
 
 export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToast }) => {
   const [activeTab, setActiveTab] = useState<MainTab>('analytics');
   const [openAddLibrarian, setOpenAddLibrarian] = useState(false);
   const [openAddStudent, setOpenAddStudent] = useState(false);
   const [deskSubTab, setDeskSubTab] = useState<'issue' | 'return'>('issue');
+
+  const handleAddTeacherClick = () => {
+    setActiveTab('teachers');
+  };
 
   const handleAddLibrarianClick = () => {
     setOpenAddLibrarian(true);
@@ -33,6 +38,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
 
   const navItems: { id: MainTab; label: string; icon: React.ReactNode }[] = [
     { id: 'analytics', label: 'Full Analytics', icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'teachers', label: 'Teachers & Classes', icon: <School className="w-4 h-4" /> },
     { id: 'librarians', label: 'Manage Librarians', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'students', label: 'Student Directory', icon: <Users className="w-4 h-4" /> },
     { id: 'books', label: 'Book Catalog', icon: <BookOpen className="w-4 h-4" /> },
@@ -64,11 +70,19 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
+            onClick={handleAddTeacherClick}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-500/20 transition flex items-center gap-2"
+          >
+            <School className="w-4 h-4" />
+            + Add Teacher
+          </button>
+
+          <button
             onClick={handleAddLibrarianClick}
             className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition flex items-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
-            + Add New Librarian
+            + Add Librarian
           </button>
 
           <button
@@ -76,7 +90,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
             className="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-500/20 transition flex items-center gap-2"
           >
             <Users className="w-4 h-4" />
-            + Add New Student
+            + Add Student
           </button>
         </div>
       </div>
@@ -109,6 +123,10 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
       {/* Tab Views */}
       <div>
         {activeTab === 'analytics' && <ReportsManager />}
+
+        {activeTab === 'teachers' && (
+          <TeachersManager onSuccessToast={onSuccessToast} />
+        )}
 
         {activeTab === 'librarians' && (
           <LibrariansManager

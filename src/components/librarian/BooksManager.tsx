@@ -24,6 +24,7 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingBook, setDeletingBook] = useState<Book | null>(null);
 
   const fetchBooks = async () => {
     setLoading(true);
@@ -118,22 +119,30 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
     }
   };
 
-  const handleDelete = async (id: number, bookTitle: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${bookTitle}" from the library catalog?`)) return;
+  const handleDeleteClick = (book: Book) => {
+    setDeletingBook(book);
+  };
 
+  const confirmDelete = async () => {
+    if (!deletingBook) return;
     try {
-      const res = await fetch(`/api/books/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/books/${deletingBook.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
-        onSuccessToast(`Book "${bookTitle}" removed`);
+        onSuccessToast(`Book "${deletingBook.title}" removed`);
         fetchBooks();
       } else {
-        // Use toast or console instead of alert
         console.error(data.error || 'Could not delete book');
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setDeletingBook(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeletingBook(null);
   };
 
   const filteredBooks = books.filter((b) => {
@@ -264,7 +273,7 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                             Edit
                           </button>
                           <button
-                            onClick={() => handleDelete(b.id, b.title)}
+                            onClick={() => handleDeleteClick(b)}
                             className="inline-flex items-center gap-1 px-2.5 py-1.2 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 text-xs transition"
                             title="Delete Book"
                           >

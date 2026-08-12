@@ -6,10 +6,22 @@ export interface User {
 }
 
 export interface LibrarianAccount {
+  password?: string;
   id: number;
   name: string;
   email: string;
   role: 'librarian' | 'head_librarian';
+  created_at?: string;
+}
+
+export interface Teacher {
+  password?: string;
+  id: number;
+  name: string;
+  email: string;
+  username: string;
+  assigned_class?: string | null;
+  assigned_division?: string | null;
   created_at?: string;
 }
 
@@ -26,6 +38,7 @@ export interface Student {
   restriction_reason?: string | null;
   restriction_until?: string | null;
   active_issues_count?: number;
+  class_teacher_name?: string | null;
 }
 
 export interface Book {
@@ -73,8 +86,8 @@ export interface ReportSummary {
 }
 
 export interface AuthState {
-  userType: 'librarian' | 'student' | null;
-  currentUser: User | Student | null;
+  userType: 'librarian' | 'student' | 'teacher' | null;
+  currentUser: User | Student | Teacher | null;
   token?: string;
 }
 

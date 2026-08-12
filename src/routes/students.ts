@@ -11,21 +11,21 @@ studentsRouter.get('/', async (req: Request, res: Response) => {
     // Sort logic in JS to properly parse strings to integers for class and roll no
     allStudents.sort((a, b) => {
         // Parse Class (e.g. "Class 9" -> 9, or "9" -> 9)
-        const classAStr = a.class.replace(/\D/g, '');
-        const classBStr = b.class.replace(/\D/g, '');
+        const classAStr = String(a.class || '').replace(/\D/g, '');
+        const classBStr = String(b.class || '').replace(/\D/g, '');
         const classA = parseInt(classAStr, 10) || 0;
         const classB = parseInt(classBStr, 10) || 0;
         
         if (classA !== classB) return classA - classB;
 
         // Parse Division (e.g. "Div A" -> "A")
-        const divA = a.division.toUpperCase().replace(/[^A-Z]/g, '');
-        const divB = b.division.toUpperCase().replace(/[^A-Z]/g, '');
+        const divA = String(a.division || '').toUpperCase().replace(/[^A-Z]/g, '');
+        const divB = String(b.division || '').toUpperCase().replace(/[^A-Z]/g, '');
         if (divA !== divB) return divA.localeCompare(divB);
 
         // Parse Roll No (e.g. "Roll #35" -> 35, or "35" -> 35)
-        const rollA = parseInt(a.roll_no.replace(/\D/g, ''), 10) || 0;
-        const rollB = parseInt(b.roll_no.replace(/\D/g, ''), 10) || 0;
+        const rollA = parseInt(String(a.roll_no || '').replace(/\D/g, ''), 10) || 0;
+        const rollB = parseInt(String(b.roll_no || '').replace(/\D/g, ''), 10) || 0;
         return rollA - rollB;
     });
 
@@ -33,7 +33,7 @@ studentsRouter.get('/', async (req: Request, res: Response) => {
     for (const s of allStudents) {
         const activeIssues = await db.query.issued_books.findMany({
             where: (issued_books, { and, eq, ne }) => and(
-                eq(issued_books.student_id, s.id),
+                eq(issued_books.student_id, Number(s.id)),
                 ne(issued_books.status, 'returned')
             )
         });

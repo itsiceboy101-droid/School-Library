@@ -43,6 +43,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ student }) =
             </p>
           </div>
         </div>
+
+        <div className="bg-sky-50/80 border border-sky-200/80 rounded-xl px-4 py-2.5 text-xs">
+          <span className="text-slate-500 block font-medium">Class Teacher</span>
+          <span className="font-bold text-blue-900 text-sm">
+            {student.class_teacher_name || 'Not Assigned'}
+          </span>
+        </div>
       </div>
 
       {/* Navigation Tabs */}

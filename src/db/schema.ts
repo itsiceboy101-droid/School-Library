@@ -43,10 +43,23 @@ export const books = pgTable('books', {
 export const issued_books = pgTable('issued_books', {
   id: serial('id').primaryKey(),
   book_id: integer('book_id').references(() => books.id, { onDelete: 'cascade' }).notNull(),
-  student_id: integer('student_id').references(() => students.id, { onDelete: 'cascade' }).notNull(),
+  student_id: integer('student_id').references(() => students.id, { onDelete: 'cascade' }),
+  teacher_id: integer('teacher_id').references(() => teachers.id, { onDelete: 'cascade' }),
   issue_date: varchar('issue_date', { length: 50 }).notNull(), // YYYY-MM-DD
   due_date: varchar('due_date', { length: 50 }).notNull(), // YYYY-MM-DD
   return_date: varchar('return_date', { length: 50 }),
   status: varchar('status', { length: 50 }).notNull(), // 'issued' | 'returned' | 'overdue'
   fine_amount: integer('fine_amount').default(0),
 });
+
+export const teachers = pgTable('teachers', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  username: varchar('username', { length: 255 }).notNull().unique(),
+  password_hash: varchar('password_hash', { length: 255 }).notNull(),
+  assigned_class: varchar('assigned_class', { length: 50 }),
+  assigned_division: varchar('assigned_division', { length: 50 }),
+  created_at: timestamp('created_at').defaultNow(),
+});
+

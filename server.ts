@@ -9,6 +9,7 @@ import { booksRouter } from "./src/routes/books";
 import { issuesRouter } from "./src/routes/issues";
 import { reportsRouter } from "./src/routes/reports";
 import { studentPortalRouter } from "./src/routes/studentPortal";
+import { teachersRouter } from "./src/routes/teachers";
 
 const app = express();
 const PORT = 3000;
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/students', studentsRouter);
 app.use('/api/librarians', librariansRouter);
+app.use('/api/teachers', teachersRouter);
 app.use('/api/books', booksRouter);
 app.use('/api/issue', issuesRouter);
 app.use('/api/return', issuesRouter);
@@ -29,18 +31,31 @@ app.use('/api/student', studentPortalRouter);
 // Database seeding - ensures master librarian exists
 import { db } from './src/db/db';
 import { librarians } from './src/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 async function seedDatabase() {
     try {
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS teachers (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            username VARCHAR(255) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            assigned_class VARCHAR(50),
+            assigned_division VARCHAR(50),
+            created_at TIMESTAMP DEFAULT NOW()
+          );
+        `);
+
         const existing = await db.query.librarians.findFirst({
             where: eq(librarians.id, 1)
         });
         if (!existing) {
             await db.insert(librarians).values({
                 id: 1,
-                name: 'Teacher Access',
-                email: 'teacher@school.com',
+                name: 'Admin Access',
+                email: 'admin@school.com',
                 password_hash: 'Pass@321@123',
                 role: 'head_librarian'
             });

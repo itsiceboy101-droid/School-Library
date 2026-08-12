@@ -5,12 +5,36 @@ import { eq } from 'drizzle-orm';
 
 export const librariansRouter = Router();
 
+librariansRouter.put('/:id', async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+  const { name, email, password } = req.body;
+  try {
+    const updated = await db.update(librarians)
+      .set({
+        name: name || undefined,
+        email: email || undefined,
+        password_hash: password || undefined,
+      })
+      .where(eq(librarians.id, id))
+      .returning();
+      
+    if (updated.length === 0) {
+      return res.status(404).json({ error: 'Librarian not found' });
+    }
+    res.json({ message: 'Librarian updated successfully', librarian: updated[0] });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 librariansRouter.get('/', async (req: Request, res: Response) => {
   try {
     const allLibrarians = await db.query.librarians.findMany({
         orderBy: (librarians, { asc }) => [asc(librarians.id)]
     });
-    res.json(allLibrarians);
+    const mapped = allLibrarians.map(lib => ({ ...lib, password: lib.password_hash }));
+    res.json(mapped);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -11,8 +11,8 @@ reportsRouter.get('/summary', async (req: Request, res: Response) => {
       const today = getTodayStr();
       const allBooks = await db.query.books.findMany();
       const total_books = allBooks.length;
-      const total_copies = allBooks.reduce((acc, b) => acc + b.total_copies, 0);
-      const available_copies = allBooks.reduce((acc, b) => acc + b.available_copies, 0);
+      const total_copies = allBooks.reduce((acc: number, b: any) => acc + (Number(b.total_copies) || 0), 0);
+      const available_copies = allBooks.reduce((acc: number, b: any) => acc + (Number(b.available_copies) || 0), 0);
       
       const activeIssues = await db.query.issued_books.findMany({ where: ne(issued_books.status, 'returned') });
       const issued = activeIssues.length;
@@ -23,7 +23,7 @@ reportsRouter.get('/summary', async (req: Request, res: Response) => {
       
       let restricted_students_count = 0;
       for (const s of allStudents) {
-          const status = await getStudentRestrictionStatus(s.id);
+          const status = await getStudentRestrictionStatus(Number(s.id));
           if (status.isRestricted) restricted_students_count++;
       }
       

@@ -4,12 +4,13 @@ import { LoginModal } from './components/LoginModal';
 import { MainDashboard } from './components/MainDashboard';
 import { LibrarianDashboard } from './components/LibrarianDashboard';
 import { StudentDashboard } from './components/StudentDashboard';
+import { TeacherDashboard } from './components/TeacherDashboard';
 import { Toast } from './components/Toast';
-import { User as LibrarianUser, Student } from './types';
+import { User as LibrarianUser, Student, Teacher } from './types';
 
 export default function App() {
-  const [userType, setUserType] = useState<'librarian' | 'student' | null>(null);
-  const [currentUser, setCurrentUser] = useState<LibrarianUser | Student | null>(null);
+  const [userType, setUserType] = useState<'librarian' | 'student' | 'teacher' | null>(null);
+  const [currentUser, setCurrentUser] = useState<LibrarianUser | Student | Teacher | null>(null);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -32,32 +33,12 @@ export default function App() {
       });
       const data = await res.json();
       if (res.ok && data.user) {
-        setUserType('librarian');
+        setUserType(data.userType || 'librarian');
         setCurrentUser(data.user);
         showToast(`Welcome back, ${data.user.name}`);
         return { success: true };
       }
       return { success: false, error: data.error || 'Authentication failed' };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Server error' };
-    }
-  };
-
-  const handleSignupLibrarian = async (name: string, email: string, pass: string) => {
-    try {
-      const res = await fetch('/api/auth/signup-librarian', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password: pass }),
-      });
-      const data = await res.json();
-      if (res.ok && data.user) {
-        setUserType('librarian');
-        setCurrentUser(data.user);
-        showToast(`Account created! Welcome, ${data.user.name}`);
-        return { success: true };
-      }
-      return { success: false, error: data.error || 'Registration failed' };
     } catch (err: any) {
       return { success: false, error: err.message || 'Server error' };
     }
@@ -72,7 +53,7 @@ export default function App() {
       });
       const data = await res.json();
       if (res.ok && data.user) {
-        setUserType('student');
+        setUserType(data.userType || 'student');
         setCurrentUser(data.user);
         showToast(`Welcome, ${data.user.name}`);
         return { success: true };
@@ -112,7 +93,7 @@ export default function App() {
         userType={userType}
         currentUser={currentUser}
         onLogout={handleLogout}
-        onSwitchPortal={(role) => {
+        onSwitchPortal={() => {
           setUserType(null);
           setCurrentUser(null);
         }}
@@ -139,6 +120,11 @@ export default function App() {
               onSuccessToast={showToast}
             />
           )
+        ) : userType === 'teacher' ? (
+          <TeacherDashboard
+            teacher={currentUser as Teacher}
+            onSuccessToast={showToast}
+          />
         ) : (
           <StudentDashboard student={currentUser as Student} />
         )}
