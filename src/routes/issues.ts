@@ -76,71 +76,92 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
 });
 
 issuesRouter.post('/', async (req: Request, res: Response) => {
-  const { student_id, book_id, return_days } = req.body;
-  if (!student_id || !book_id) {
-    return res.status(400).json({ error: 'Student and book are required' });
+  const { student_id, teacher_id, book_id, return_days, copies } = req.body;
+  if ((!student_id && !teacher_id) || !book_id) {
+    return res.status(400).json({ error: 'Borrower and book are required' });
   }
 
-  const sId = parseInt(student_id, 10);
+  const sId = student_id ? parseInt(student_id, 10) : undefined;
+  const tId = teacher_id ? parseInt(teacher_id, 10) : undefined;
   const bId = parseInt(book_id, 10);
   const days = parseInt(return_days || '14', 10);
+  const numCopies = (tId && copies) ? parseInt(String(copies), 10) : 1;
 
   try {
-    const student = await db.query.students.findFirst({ where: eq(students.id, sId) });
-    if (!student) return res.status(400).json({ error: 'Selected student does not exist' });
+    let borrowerName = "";
 
-    const restriction = await getStudentRestrictionStatus(sId);
-    if (restriction.isRestricted) {
-      return res.status(400).json({
-        error: `Issue Blocked: ${student.name} is under a 2-week borrowing ban! (${restriction.reason})`,
-        restriction,
-      });
+    if (sId) {
+      const student = await db.query.students.findFirst({ where: eq(students.id, sId) });
+      if (!student) return res.status(400).json({ error: 'Selected student does not exist' });
+      borrowerName = student.name;
+
+      const restriction = await getStudentRestrictionStatus(sId);
+      if (restriction.isRestricted) {
+        return res.status(400).json({
+          error: `Issue Blocked: ${student.name} is under a 2-week borrowing ban! (${restriction.reason})`,
+          restriction,
+        });
+      }
+    } else if (tId) {
+      const teacher = await db.query.teachers.findFirst({ where: eq(teachers.id, tId) });
+      if (!teacher) return res.status(400).json({ error: 'Selected teacher does not exist' });
+      borrowerName = teacher.name;
     }
 
     const book = await db.query.books.findFirst({ where: eq(books.id, bId) });
     if (!book) return res.status(400).json({ error: 'Selected book does not exist' });
-    if (book.available_copies < 1) {
-      return res.status(400).json({ error: `No available copies for "${book.title}"` });
+    if (book.available_copies < numCopies) {
+      return res.status(400).json({ error: `Not enough available copies for "${book.title}" (requested ${numCopies}, available ${book.available_copies})` });
     }
 
-    const existing = await db.query.issued_books.findFirst({
-      where: and(
-        eq(issued_books.student_id, sId),
-        eq(issued_books.book_id, bId),
-        ne(issued_books.status, 'returned')
-      )
-    });
+    if (sId) {
+      const existing = await db.query.issued_books.findFirst({
+        where: and(
+          eq(issued_books.book_id, bId),
+          eq(issued_books.student_id, sId),
+          ne(issued_books.status, 'returned')
+        )
+      });
 
-    if (existing) {
-      return res.status(400).json({ error: `Student already has "${book.title}" currently issued` });
+      if (existing) {
+        return res.status(400).json({ error: `Student already has "${book.title}" currently issued` });
+      }
     }
 
     const issueDate = getTodayStr();
     const dueDate = getTodayStr(days);
 
-    const newIssue = await db.transaction(async (tx) => {
-        const insertRes = await tx.insert(issued_books).values({
+    const newIssues = await db.transaction(async (tx) => {
+        const insertions = [];
+        for (let i = 0; i < numCopies; i++) {
+          insertions.push({
             book_id: bId,
-            student_id: sId,
+            student_id: sId || null,
+            teacher_id: tId || null,
             issue_date: issueDate,
             due_date: dueDate,
             status: 'issued',
             fine_amount: 0
-        }).returning();
+          });
+        }
+        
+        const insertRes = await tx.insert(issued_books).values(insertions).returning();
 
         await tx.update(books)
-            .set({ available_copies: book.available_copies - 1 })
+            .set({ available_copies: book.available_copies - numCopies })
             .where(eq(books.id, bId));
         
-        return insertRes[0];
+        return insertRes;
     });
 
     res.status(201).json({
-      id: newIssue.id,
+      id: newIssues[0].id,
       due_date: dueDate,
       book_title: book.title,
-      student_name: student.name,
-      message: `Book "${book.title}" issued successfully to ${student.name}`,
+      student_name: borrowerName,
+      message: numCopies > 1 
+        ? `${numCopies} copies of "${book.title}" issued successfully to ${borrowerName}`
+        : `Book "${book.title}" issued successfully to ${borrowerName}`,
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -208,5 +229,26 @@ issuesRouter.post('/:issueId', async (req: Request, res: Response) => {
       }
   } catch (error: any) {
       res.status(500).json({ error: error.message });
+  }
+});
+
+issuesRouter.put('/:id', async (req: Request, res: Response) => {
+  const issueId = parseInt(req.params.id, 10);
+  const { due_date } = req.body;
+  if (!due_date) return res.status(400).json({ error: 'Due date is required' });
+
+  try {
+    const updated = await db.update(issued_books)
+      .set({ due_date })
+      .where(eq(issued_books.id, issueId))
+      .returning();
+
+    if (updated.length === 0) {
+      return res.status(404).json({ error: 'Issue record not found' });
+    }
+
+    res.json({ message: 'Due date updated successfully', issue: updated[0] });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });

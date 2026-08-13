@@ -342,7 +342,9 @@ export const LibrariansManager: React.FC<LibrariansManagerProps> = ({ onSuccessT
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@school.edu"
+                  placeholder="name@podar.org"
+                  pattern=".*@podar\\.org$"
+                  title="Email must end with @podar.org"
                   className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>

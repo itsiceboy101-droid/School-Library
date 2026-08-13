@@ -15,6 +15,34 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
   const [students, setStudents] = useState<Student[]>([]);
   const [borrowedBooks, setBorrowedBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const groupedActiveBooks = React.useMemo(() => {
+    const groups: Record<string, any> = {};
+    borrowedBooks.filter(b => b.status !== 'returned').forEach(item => {
+      const key = `${item.book_id}-${item.issue_date}-${item.due_date}`;
+      if (!groups[key]) {
+        groups[key] = { ...item, copies: 1, copy_ids: [item.id] };
+      } else {
+        groups[key].copies += 1;
+        groups[key].copy_ids.push(item.id);
+      }
+    });
+    return Object.values(groups);
+  }, [borrowedBooks]);
+  
+  const groupedReturnedBooks = React.useMemo(() => {
+    const groups: Record<string, any> = {};
+    borrowedBooks.filter(b => b.status === 'returned').forEach(item => {
+      const key = `${item.book_id}-${item.issue_date}-${item.return_date}`;
+      if (!groups[key]) {
+        groups[key] = { ...item, copies: 1, copy_ids: [item.id] };
+      } else {
+        groups[key].copies += 1;
+        groups[key].copy_ids.push(item.id);
+      }
+    });
+    return Object.values(groups);
+  }, [borrowedBooks]);
+
   const [searchTerm, setSearchTerm] = useState('');
 
   // Add student modal state
@@ -424,14 +452,19 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-blue-100 text-xs">
-                  {borrowedBooks.filter(b => b.status !== 'returned').map((b) => (
+                  {groupedActiveBooks.map((b) => (
                     <tr key={b.id} className="hover:bg-blue-50/50 transition">
                       <td className="px-6 py-4 font-bold text-slate-900">
                         {b.book_title}
                         <div className="text-[11px] text-slate-500 font-normal">{b.book_author}</div>
+                        {b.copies > 1 && (
+                          <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">
+                            {b.copies} Copies
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-slate-600">{b.issue_date}</td>
-                      <td className="px-6 py-4 font-mono text-slate-700 font-semibold">{b.due_date}</td>
+                      <td className="px-6 py-4 font-mono text-slate-700 font-semibold">{new Date(b.due_date).getFullYear() > 2030 ? "No Limit" : b.due_date}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                           b.status === 'overdue' ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
@@ -466,11 +499,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {borrowedBooks.filter(b => b.status === 'returned').map((b) => (
+                  {groupedReturnedBooks.map((b) => (
                     <tr key={b.id} className="hover:bg-slate-50 transition">
                       <td className="px-6 py-4 font-bold text-slate-900">
                         {b.book_title}
                         <div className="text-[11px] text-slate-500 font-normal">{b.book_author}</div>
+                        {b.copies > 1 && (
+                          <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">
+                            {b.copies} Copies
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-slate-600">{b.issue_date}</td>
                       <td className="px-6 py-4 text-slate-600 font-semibold">{b.return_date || '-'}</td>

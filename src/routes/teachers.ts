@@ -57,6 +57,11 @@ teachersRouter.post('/', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Name, email, username, and password are required' });
   }
 
+  if (!email.toLowerCase().endsWith('@podar.org')) {
+    return res.status(400).json({ error: 'Only @podar.org email addresses are allowed for teachers.' });
+  }
+
+
   try {
     const existingEmail = await db.query.teachers.findFirst({
       where: ilike(teachers.email, email.trim()),

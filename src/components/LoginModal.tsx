@@ -118,7 +118,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
             <p className="text-xs text-slate-500 mt-1">
               {platform === 'librarian'
-                ? 'Sign in with your registered Librarian or Teacher email/username to access the system'
+                ? 'Sign in with your @podar.org email or username to access the system'
                 : 'Enter your student username to view active borrowings and account status'}
             </p>
           </div>
@@ -142,7 +142,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     type="text"
                     value={emailOrPass}
                     onChange={(e) => setEmailOrPass(e.target.value)}
-                    placeholder="admin@school.com or teacher username"
+                    placeholder="@podar.org email or username"
                     className="w-full pl-9 pr-3 py-2.5 bg-white/80 border border-blue-200 rounded-xl text-sm text-slate-800 placeholder-slate-400/60 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
                   />
                 </div>

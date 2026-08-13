@@ -10,6 +10,11 @@ authRouter.post('/login-librarian', async (req: Request, res: Response) => {
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
+  
+  if (email.includes('@') && !email.toLowerCase().endsWith('@podar.org')) {
+    return res.status(401).json({ error: 'Access denied: Only @podar.org email addresses are authorized.' });
+  }
+
 
   try {
     const user = await db.query.librarians.findFirst({
@@ -67,6 +72,11 @@ authRouter.post('/login-student', async (req: Request, res: Response) => {
   if (!card_no || !password) {
     return res.status(400).json({ error: 'Username and password are required' });
   }
+
+  if (card_no.includes('@') && !card_no.toLowerCase().endsWith('@podar.org')) {
+    return res.status(401).json({ error: 'Access denied: Only @podar.org email addresses are authorized.' });
+  }
+
 
   try {
     // 1. Try finding student by library_card_no / username

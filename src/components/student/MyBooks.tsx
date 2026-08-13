@@ -94,7 +94,7 @@ export const MyBooks: React.FC<MyBooksProps> = ({ student }) => {
                     <div>
                       <span className="text-slate-500 block text-[11px]">Return Due Date</span>
                       <span className={`font-bold ${isOverdue ? 'text-rose-600' : 'text-emerald-700'}`}>
-                        {item.due_date}
+                        {new Date(item.due_date).getFullYear() > 2030 ? "No Limit" : item.due_date}
                       </span>
                     </div>
                   </div>

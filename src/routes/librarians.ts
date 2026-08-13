@@ -46,6 +46,11 @@ librariansRouter.post('/', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
+  if (!email.toLowerCase().endsWith('@podar.org')) {
+    return res.status(400).json({ error: 'Only @podar.org email addresses are allowed for librarians.' });
+  }
+
+
   try {
     const existing = await db.query.librarians.findFirst({
         where: eq(librarians.email, email)

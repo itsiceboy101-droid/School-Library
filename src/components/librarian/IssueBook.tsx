@@ -15,7 +15,9 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [selectedBookId, setSelectedBookId] = useState<string>('');
-  const [returnDays, setReturnDays] = useState<number>(14);
+  const [returnDays, setReturnDays] = useState<number | ''> (14);
+  const [teacherLimitEnabled, setTeacherLimitEnabled] = useState(false);
+  const [copies, setCopies] = useState<number>(1);
   
   const [studentSearch, setStudentSearch] = useState('');
   const [isStudentOpen, setIsStudentOpen] = useState(false);
@@ -84,7 +86,8 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
           student_id: selectedStudentId || undefined,
           teacher_id: selectedTeacherId || undefined,
           book_id: selectedBookId,
-          return_days: returnDays,
+          return_days: (selectedTeacherId && !teacherLimitEnabled) ? 99999 : returnDays,
+          copies: selectedTeacherId ? copies : 1,
         }),
       });
 
@@ -94,6 +97,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
       } else {
         onSuccessToast(data.message || `Book issued! Return due on ${data.due_date}`);
         setSelectedBookId('');
+        setCopies(1);
         setSelectedStudentId('');
         setSelectedTeacherId('');
         setStudentSearch('');
@@ -289,6 +293,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                       onClick={() => {
                         if (b.available_copies < 1) return;
                         setSelectedBookId(b.id.toString());
+                        setCopies(1);
                         setBookSearch(b.title);
                         setIsBookOpen(false);
                       }}
@@ -333,39 +338,96 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
             )}
           </div>
 
-          {/* Return Days Selection */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              Return Period (Days)
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {[7, 14, 21, 30].map((days) => (
-                <button
-                  type="button"
-                  key={days}
-                  onClick={() => setReturnDays(days)}
-                  className={`py-2 px-3 text-xs font-bold rounded-xl border transition ${
-                    returnDays === days
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                      : 'bg-white border-blue-200 text-slate-700 hover:bg-blue-50'
-                  }`}
-                >
-                  {days} Days
-                </button>
-              ))}
+          
+          {/* Copies Selection for Teachers */}
+          {selectedTeacherId && selectedBook && selectedBook.available_copies > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <BookPlus className="w-4 h-4 text-blue-600" />
+                Number of Copies
+              </label>
+              <select
+                value={copies}
+                onChange={(e) => setCopies(parseInt(e.target.value))}
+                className="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 font-medium"
+              >
+                {Array.from({ length: Math.min(50, selectedBook.available_copies) }, (_, i) => i + 1).map((num) => (
+                  <option key={num} value={num}>
+                    {num} {num === 1 ? 'Copy' : 'Copies'}
+                  </option>
+                ))}
+              </select>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1.5">
-              Calculated Due Date:{' '}
-              <span className="text-blue-700 font-semibold">
-                {new Date(Date.now() + returnDays * 86400000).toLocaleDateString(undefined, {
-                  weekday: 'short',
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
-            </p>
+          )}
+          
+          {/* Return Days Selection */}
+          <div className="space-y-4">
+            {selectedTeacherId && (
+              <label className="flex items-center gap-3 cursor-pointer bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:bg-slate-100 transition">
+                <input 
+                  type="checkbox" 
+                  checked={teacherLimitEnabled} 
+                  onChange={(e) => setTeacherLimitEnabled(e.target.checked)} 
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                />
+                <span className="text-sm font-semibold text-slate-700">Enforce Return Limit for Teacher</span>
+              </label>
+            )}
+
+            {(!selectedTeacherId || teacherLimitEnabled) && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-blue-600" />
+                  Return Period (Days)
+                </label>
+                <div className="flex gap-3 items-center">
+                  <input
+                    type="number"
+                    min="1"
+                    value={returnDays}
+                    onChange={(e) => setReturnDays(e.target.value === '' ? '' : parseInt(e.target.value))}
+                    className="w-32 px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 font-medium"
+                    placeholder="Days"
+                  />
+                  <div className="flex-1 flex gap-2">
+                    {[7, 14, 21, 30].map((days) => (
+                      <button
+                        type="button"
+                        key={days}
+                        onClick={() => setReturnDays(days)}
+                        className={`flex-1 py-2 px-2 text-[11px] font-bold rounded-lg border transition ${
+                          returnDays === days
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                            : 'bg-white border-blue-200 text-slate-700 hover:bg-blue-50'
+                        }`}
+                      >
+                        {days}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {returnDays !== '' && (
+                  <p className="text-[11px] text-slate-500 mt-2">
+                    Calculated Due Date:{' '}
+                    <span className="text-blue-700 font-semibold">
+                      {new Date(Date.now() + Number(returnDays) * 86400000).toLocaleDateString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {selectedTeacherId && !teacherLimitEnabled && (
+              <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200 flex items-center gap-2 font-medium">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                No return limit will be enforced for this teacher.
+              </p>
+            )}
           </div>
 
           <button
