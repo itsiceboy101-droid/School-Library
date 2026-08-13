@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, PlusCircle, Trash2, Search, CheckCircle, AlertCircle, X, Layers } from 'lucide-react';
-import { Book } from '../../types';
+import { BookOpen, PlusCircle, Trash2, Search, CheckCircle, AlertCircle, X, Layers, Hash } from 'lucide-react';
+import { Book, IssueCode } from '../../types';
 
 interface BooksManagerProps {
   onSuccessToast: (msg: string) => void;
@@ -8,6 +8,7 @@ interface BooksManagerProps {
 
 export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) => {
   const [books, setBooks] = useState<Book[]>([]);
+  const [issueCodes, setIssueCodes] = useState<IssueCode[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const [searchType, setSearchType] = useState('all');
@@ -29,10 +30,15 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
   const fetchBooks = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/books');
-      if (res.ok) {
-        const data = await res.json();
-        setBooks(data);
+      const [resBooks, resCodes] = await Promise.all([
+        fetch('/api/books'),
+        fetch('/api/issue-codes')
+      ]);
+      if (resBooks.ok && resCodes.ok) {
+        const booksData = await resBooks.json();
+        const codesData = await resCodes.json();
+        setBooks(booksData);
+        setIssueCodes(codesData);
       }
     } catch (err) {
       console.error(err);
@@ -76,6 +82,20 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
     if (!title || !author || !totalCopies) {
       setError('Title, author, and total copies are required');
       return;
+    }
+
+    const numCopies = parseInt(totalCopies, 10);
+    if (isNaN(numCopies) || numCopies < 1) {
+      setError('Total copies must be at least 1');
+      return;
+    }
+
+    if (editingBook) {
+      const currentlyIssued = editingBook.total_copies - editingBook.available_copies;
+      if (numCopies < currentlyIssued) {
+        setError(`Cannot set total copies to ${numCopies}. At least ${currentlyIssued} ${currentlyIssued === 1 ? 'copy is' : 'copies are'} currently issued.`);
+        return;
+      }
     }
 
     setSaving(true);
@@ -131,12 +151,13 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
       if (res.ok) {
         onSuccessToast(`Book "${deletingBook.title}" removed`);
         fetchBooks();
+        setDeletingBook(null);
       } else {
-        console.error(data.error || 'Could not delete book');
+        alert(data.error || 'Could not delete book');
+        setDeletingBook(null);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
+    } catch (err: any) {
+      alert(err.message || 'An error occurred');
       setDeletingBook(null);
     }
   };
@@ -225,6 +246,7 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                   <th className="px-6 py-3.5">Title & Author</th>
                   <th className="px-6 py-3.5">Category</th>
                   <th className="px-6 py-3.5">ISBN</th>
+                  <th className="px-6 py-3.5 text-center">Issue Codes</th>
                   <th className="px-6 py-3.5">Availability Status</th>
                   <th className="px-6 py-3.5 text-right">Manage</th>
                 </tr>
@@ -247,6 +269,19 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                       </td>
                       <td className="px-6 py-4 font-mono text-slate-500 text-[11px]">
                         {b.isbn || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {(() => {
+                          const codes = issueCodes.filter(c => c.book_id === b.id);
+                          if (codes.length === 0) return <span className="text-[11px] font-medium text-slate-400">N/A</span>;
+                          return (
+                            <select className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded px-2 py-1 focus:outline-none max-w-[100px]">
+                              {codes.map(c => (
+                                <option key={c.id} value={c.full_code}>🔑 {c.full_code}</option>
+                              ))}
+                            </select>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -290,6 +325,44 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
           </div>
         )}
       </div>
+
+      {/* Delete Book Confirmation Modal */}
+      {deletingBook && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-blue-200 rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Delete Book</h3>
+                <p className="text-xs text-slate-500">Remove from library catalog</p>
+              </div>
+            </div>
+            
+            <p className="text-sm text-slate-700 mb-6">
+              Are you sure you want to delete <strong>"{deletingBook.title}"</strong>? This action cannot be undone.
+            </p>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={cancelDelete}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-500/20 transition"
+              >
+                Delete Book
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Book Modal */}
       {isModalOpen && (
@@ -384,13 +457,18 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                     <Layers className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="number"
-                      min="1"
+                      min={editingBook ? Math.max(1, editingBook.total_copies - editingBook.available_copies) : 1}
                       value={totalCopies}
                       onChange={(e) => setTotalCopies(e.target.value)}
                       placeholder="5"
-                      className="w-full pl-9 pr-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-semibold"
                     />
                   </div>
+                  {editingBook && (editingBook.total_copies - editingBook.available_copies) > 0 && (
+                    <p className="text-[10px] text-amber-700 font-semibold mt-1">
+                      Minimum required: {editingBook.total_copies - editingBook.available_copies} ({editingBook.total_copies - editingBook.available_copies} {editingBook.total_copies - editingBook.available_copies === 1 ? 'copy' : 'copies'} currently issued)
+                    </p>
+                  )}
                 </div>
               </div>
 

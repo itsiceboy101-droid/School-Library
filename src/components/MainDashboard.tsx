@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, ShieldCheck, Users, BookOpen, ArrowLeftRight, UserPlus, Sparkles, School } from 'lucide-react';
+import { BarChart3, ShieldCheck, Users, BookOpen, ArrowLeftRight, UserPlus, Sparkles, School, KeyRound } from 'lucide-react';
 import { User as LibrarianUser, Student } from '../types';
 import { ReportsManager } from './librarian/ReportsManager';
 import { LibrariansManager } from './librarian/LibrariansManager';
@@ -8,13 +8,14 @@ import { TeachersManager } from './librarian/TeachersManager';
 import { BooksManager } from './librarian/BooksManager';
 import { IssueBook } from './librarian/IssueBook';
 import { ReturnBook } from './librarian/ReturnBook';
+import { IssueCodeManager } from './librarian/IssueCodeManager';
 
 interface MainDashboardProps {
   user: LibrarianUser;
   onSuccessToast: (msg: string) => void;
 }
 
-type MainTab = 'analytics' | 'teachers' | 'librarians' | 'students' | 'books' | 'desk';
+type MainTab = 'analytics' | 'teachers' | 'librarians' | 'students' | 'books' | 'desk' | 'issue-codes';
 
 export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToast }) => {
   const [activeTab, setActiveTab] = useState<MainTab>('analytics');
@@ -43,6 +44,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
     { id: 'students', label: 'Student Directory', icon: <Users className="w-4 h-4" /> },
     { id: 'books', label: 'Book Catalog', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'desk', label: 'Issue & Return Desk', icon: <ArrowLeftRight className="w-4 h-4" /> },
+    { id: 'issue-codes', label: '4-Digit Issue Codes', icon: <KeyRound className="w-4 h-4" /> },
   ];
 
   return (
@@ -175,6 +177,10 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
               <ReturnBook onSuccessToast={onSuccessToast} />
             )}
           </div>
+        )}
+
+        {activeTab === 'issue-codes' && (
+          <IssueCodeManager onSuccessToast={onSuccessToast} />
         )}
       </div>
     </div>

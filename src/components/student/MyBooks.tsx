@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Clock, AlertTriangle, CheckCircle2, Bookmark } from 'lucide-react';
 import { IssuedBook, Student } from '../../types';
+import { formatDate } from '../../utils/dateFormatter';
 
 interface MyBooksProps {
   student: Student;
@@ -89,12 +90,12 @@ export const MyBooks: React.FC<MyBooksProps> = ({ student }) => {
                   <div className="pt-3 border-t border-blue-200/60 grid grid-cols-2 text-xs">
                     <div>
                       <span className="text-slate-500 block text-[11px]">Issue Date</span>
-                      <span className="text-slate-700 font-medium">{item.issue_date}</span>
+                      <span className="text-slate-700 font-medium">{formatDate(item.issue_date)}</span>
                     </div>
                     <div>
                       <span className="text-slate-500 block text-[11px]">Return Due Date</span>
                       <span className={`font-bold ${isOverdue ? 'text-rose-600' : 'text-emerald-700'}`}>
-                        {new Date(item.due_date).getFullYear() > 2030 ? "No Limit" : item.due_date}
+                        {formatDate(item.due_date)}
                       </span>
                     </div>
                   </div>

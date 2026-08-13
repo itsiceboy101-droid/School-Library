@@ -3,6 +3,7 @@ import { School, UserPlus, Users, Search, AlertCircle, BookOpen, Key, Eye, EyeOf
 import { Teacher, Student } from '../types';
 import { CatalogSearch } from './student/CatalogSearch';
 import { BookMarked, History } from 'lucide-react';
+import { formatDate } from '../utils/dateFormatter';
 
 interface TeacherDashboardProps {
   teacher: Teacher;
@@ -463,8 +464,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-slate-600">{b.issue_date}</td>
-                      <td className="px-6 py-4 font-mono text-slate-700 font-semibold">{new Date(b.due_date).getFullYear() > 2030 ? "No Limit" : b.due_date}</td>
+                      <td className="px-6 py-4 text-slate-600">{formatDate(b.issue_date)}</td>
+                      <td className="px-6 py-4 font-mono text-slate-700 font-semibold">{formatDate(b.due_date)}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                           b.status === 'overdue' ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
@@ -510,8 +511,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-slate-600">{b.issue_date}</td>
-                      <td className="px-6 py-4 text-slate-600 font-semibold">{b.return_date || '-'}</td>
+                      <td className="px-6 py-4 text-slate-600">{formatDate(b.issue_date)}</td>
+                      <td className="px-6 py-4 text-slate-600 font-semibold">{b.return_date ? formatDate(b.return_date) : '-'}</td>
                       <td className="px-6 py-4">
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
                           Returned

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, BookOpen, AlertTriangle, Users, DollarSign, Layers, CheckCircle2, Download, Printer } from 'lucide-react';
 import { ReportSummary } from '../../types';
+import { formatDate } from '../../utils/dateFormatter';
 
 export const ReportsManager: React.FC = () => {
   const [summary, setSummary] = useState<ReportSummary | null>(null);
@@ -216,7 +217,7 @@ export const ReportsManager: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 font-semibold text-rose-600">
-                      {new Date(item.due_date).getFullYear() > 2030 ? "No Limit" : item.due_date}
+                      {formatDate(item.due_date)}
                     </td>
                     <td className="px-6 py-4 font-bold text-rose-600">
                       {item.days_overdue} days

@@ -10,6 +10,7 @@ import { issuesRouter } from "./src/routes/issues";
 import { reportsRouter } from "./src/routes/reports";
 import { studentPortalRouter } from "./src/routes/studentPortal";
 import { teachersRouter } from "./src/routes/teachers";
+import { issueCodesRouter } from "./src/routes/issueCodes";
 
 const app = express();
 const PORT = 3000;
@@ -27,27 +28,15 @@ app.use('/api/return', issuesRouter);
 app.use('/api/issued-books', issuesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/student', studentPortalRouter);
+app.use('/api/issue-codes', issueCodesRouter);
 
 // Database seeding - ensures master librarian exists
 import { db } from './src/db/db';
-import { librarians } from './src/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { librarians, books, issue_codes, issued_books } from './src/db/schema';
+import { eq, isNull } from 'drizzle-orm';
 
 async function seedDatabase() {
     try {
-        await db.execute(sql`
-          CREATE TABLE IF NOT EXISTS teachers (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            username VARCHAR(255) NOT NULL UNIQUE,
-            password_hash VARCHAR(255) NOT NULL,
-            assigned_class VARCHAR(50),
-            assigned_division VARCHAR(50),
-            created_at TIMESTAMP DEFAULT NOW()
-          );
-        `);
-
         const existing = await db.query.librarians.findFirst({
             where: eq(librarians.id, 1)
         });
@@ -61,6 +50,10 @@ async function seedDatabase() {
             });
             console.log('Seeded master librarian');
         }
+
+        // Removed backfill script
+
+
     } catch(e) {
         console.error('Error seeding database', e);
     }

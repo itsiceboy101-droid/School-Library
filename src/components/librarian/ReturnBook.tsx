@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowDownLeft, AlertTriangle, Clock, RefreshCw, CheckCircle2, DollarSign } from 'lucide-react';
+import { ArrowDownLeft, AlertTriangle, Clock, RefreshCw, CheckCircle2, DollarSign, Layers, Search } from 'lucide-react';
 import { IssuedBook } from '../../types';
+import { formatDate } from '../../utils/dateFormatter';
 
 interface ReturnBookProps {
   onSuccessToast: (msg: string) => void;
@@ -13,20 +14,29 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
   const [editingIssue, setEditingIssue] = useState<IssuedBook | null>(null);
   const [newDueDate, setNewDueDate] = useState<string>('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [returnQtyMap, setReturnQtyMap] = useState<Record<string, number>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+
   const groupedIssuedList = React.useMemo(() => {
     const groups: Record<string, any> = {};
-    issuedList.forEach(item => {
-      const isTeacher = item.student_name && item.student_name.includes('(Teacher)');
-      if (isTeacher) {
-        const key = `${item.student_name}-${item.book_id}-${item.issue_date}-${item.due_date}`;
-        if (!groups[key]) {
-          groups[key] = { ...item, copies: 1, copy_ids: [item.id] };
-        } else {
-          groups[key].copies += 1;
-          groups[key].copy_ids.push(item.id);
-        }
+    const filteredList = issuedList.filter((item) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        item.student_name.toLowerCase().includes(q) ||
+        (item.student_card_no || '').toLowerCase().includes(q) ||
+        item.book_title.toLowerCase().includes(q) ||
+        (item.issue_code || '').toLowerCase().includes(q)
+      );
+    });
+
+    filteredList.forEach(item => {
+      const key = `${item.student_name}-${item.book_id}-${item.issue_date}-${item.due_date}`;
+      if (!groups[key]) {
+        groups[key] = { ...item, copies: 1, copy_ids: [item.id], issue_codes: [item.issue_code] };
       } else {
-        groups[`${item.id}`] = { ...item, copies: 1, copy_ids: [item.id] };
+        groups[key].copies += 1;
+        groups[key].copy_ids.push(item.id);
+        groups[key].issue_codes.push(item.issue_code);
       }
     });
     return Object.values(groups);
@@ -62,19 +72,17 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
     if (!editingIssue) return;
     setSavingEdit(true);
     try {
-      const res = await fetch(`/api/issue/${editingIssue.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ due_date: newDueDate })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        onSuccessToast('Due date updated successfully.');
-        setEditingIssue(null);
-        fetchIssuedBooks();
-      } else {
-        console.error(data.error);
+      const ids = editingIssue.copy_ids || [editingIssue.id];
+      for (const id of ids) {
+        await fetch(`/api/issue/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ due_date: newDueDate })
+        });
       }
+      onSuccessToast('Due date updated successfully.');
+      setEditingIssue(null);
+      fetchIssuedBooks();
     } catch (err) {
       console.error(err);
     } finally {
@@ -82,17 +90,30 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
     }
   };
 
-  const handleReturn = async (issueId: number) => {
-    setReturningId(issueId);
+  const handleReturn = async (item: any) => {
+    const allIds = item.copy_ids || [item.id];
+    const isTeacherWithMultiple = (!!item.teacher_id || item.student_name?.includes('(Teacher)')) && item.copies > 1;
+    const selectedQty = (isTeacherWithMultiple && returnQtyMap[item.id] !== undefined)
+      ? returnQtyMap[item.id]
+      : allIds.length;
+
+    const idsToReturn = allIds.slice(0, selectedQty);
+    setReturningId(idsToReturn[0]);
     try {
-      const res = await fetch(`/api/return/${issueId}`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        onSuccessToast(data.message || `Returned "${data.book_title}" successfully.`);
-        fetchIssuedBooks();
-      } else {
-        console.error(data.error || 'Failed to return book');
+      let lastMsg = '';
+      for (const id of idsToReturn) {
+        const res = await fetch(`/api/return/${id}`, { method: 'POST' });
+        const data = await res.json();
+        if (res.ok) {
+          lastMsg = data.message;
+        }
       }
+      onSuccessToast(
+        selectedQty > 1
+          ? `Returned ${selectedQty} copies of "${item.book_title}" successfully.`
+          : (lastMsg || `Returned "${item.book_title}" successfully.`)
+      );
+      fetchIssuedBooks();
     } catch (err) {
       console.error(err);
     } finally {
@@ -112,13 +133,25 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
             Process book returns and enforce automatic 2-week borrowing bans for late returns
           </p>
         </div>
-        <button
-          onClick={fetchIssuedBooks}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 transition"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
-          Refresh List
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search borrower or title..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 focus:bg-white w-64 transition-all"
+            />
+          </div>
+          <button
+            onClick={fetchIssuedBooks}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+            Refresh List
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-blue-200 rounded-2xl overflow-hidden shadow-xs">
@@ -132,8 +165,10 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-sky-50 text-slate-600 uppercase font-semibold text-[10px] tracking-wider border-b border-blue-200">
                 <tr>
-                  <th className="px-6 py-3.5">Student Details</th>
+                  <th className="px-6 py-3.5">Borrower Details</th>
                   <th className="px-6 py-3.5">Book Title</th>
+                  <th className="px-6 py-3.5 text-center">No. of Copies</th>
+                  <th className="px-6 py-3.5 text-center">Issue Code(s)</th>
                   <th className="px-6 py-3.5">Issue & Due Dates</th>
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5">Borrowing Restriction Penalty</th>
@@ -143,28 +178,61 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
               <tbody className="divide-y divide-blue-100">
                 {groupedIssuedList.map((item) => {
                   const isOverdue = item.status === 'overdue';
+                  const isTeacherWithMultiple = (!!item.teacher_id || item.student_name?.includes('(Teacher)')) && item.copies > 1;
+                  const selectedQty = (isTeacherWithMultiple && returnQtyMap[item.id] !== undefined)
+                    ? returnQtyMap[item.id]
+                    : item.copies;
+
                   return (
                     <tr key={item.id} className="hover:bg-blue-50/50 transition">
                       <td className="px-6 py-4">
                         <div className="font-semibold text-slate-900">{item.student_name}</div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
                           <span className="font-mono text-blue-700 font-semibold">{item.student_card_no}</span>
-                          <span>• Class {item.student_class}-{item.student_division}</span>
+                          {item.student_class === 'Subject Teacher' || item.student_class === 'Staff' ? (
+                            <span>• {item.student_class.replace('Class ', '')}</span>
+                          ) : (
+                            <span>• {item.student_class.startsWith('Class') ? item.student_class : `Class ${item.student_class}`}{item.student_division ? `-${item.student_division}` : ''}</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-800">{item.book_title}</div>
                         <div className="text-[11px] text-slate-500">{item.book_author}</div>
-                        {item.copies > 1 && (
-                          <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">
-                            {item.copies} Copies
-                          </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border shadow-2xs ${
+                          item.copies > 1 
+                            ? 'bg-blue-100 text-blue-800 border-blue-300' 
+                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                        }`}>
+                          <Layers className="w-3.5 h-3.5 text-blue-600" />
+                          {item.copies} {item.copies === 1 ? 'Copy' : 'Copies'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {item.copies > 1 ? (
+                          <select className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded px-2 py-1 focus:outline-none">
+                            {item.issue_codes.map((code: string | null, idx: number) => (
+                              code && (
+                                <option key={idx} value={code}>
+                                  🔑 {code}
+                                </option>
+                              )
+                            ))}
+                          </select>
+                        ) : (
+                          item.issue_codes[0] && (
+                            <span className="font-mono text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                              🔑 {item.issue_codes[0]}
+                            </span>
+                          )
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-slate-600">Issue: {item.issue_date}</div>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-slate-600">Issue: {formatDate(item.issue_date)}</div>
                         <div className={`font-semibold mt-0.5 ${isOverdue ? 'text-rose-600' : 'text-slate-500'}`}>
-                          Due: {new Date(item.due_date).getFullYear() > 2030 ? "No Limit" : item.due_date}
+                          Due: {formatDate(item.due_date)}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -195,21 +263,46 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEditClick(item)}
-                          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleReturn(item.copy_ids[0])}
-                          disabled={returningId === item.copy_ids[0]}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 transition disabled:opacity-50"
-                        >
-                          <ArrowDownLeft className="w-3.5 h-3.5" />
-                          {returningId === item.copy_ids[0] ? 'Processing...' : 'Return'}
-                        </button>
-                      </div>
+                          <button
+                            onClick={() => handleEditClick(item)}
+                            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                          >
+                            Edit
+                          </button>
+
+                          {isTeacherWithMultiple ? (
+                            <div className="inline-flex items-stretch rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 transition overflow-hidden border border-blue-700">
+                              <select
+                                value={selectedQty}
+                                onChange={(e) => setReturnQtyMap(prev => ({ ...prev, [item.id]: parseInt(e.target.value, 10) }))}
+                                className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-2 py-1.5 focus:outline-none border-r border-blue-500 cursor-pointer"
+                              >
+                                {Array.from({ length: item.copies }, (_, i) => i + 1).map((num) => (
+                                  <option key={num} value={num} className="bg-white text-slate-800 font-medium">
+                                    {num} {num === 1 ? 'Copy' : 'Copies'}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => handleReturn(item)}
+                                disabled={returningId === item.copy_ids[0]}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800/60 transition disabled:opacity-50"
+                              >
+                                <ArrowDownLeft className="w-3.5 h-3.5" />
+                                {returningId === item.copy_ids[0] ? '...' : 'Return'}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleReturn(item)}
+                              disabled={returningId === item.copy_ids[0]}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 transition disabled:opacity-50"
+                            >
+                              <ArrowDownLeft className="w-3.5 h-3.5" />
+                              {returningId === item.copy_ids[0] ? 'Processing...' : 'Return'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown, Search } from 'lucide-react';
-import { Student, Book, Teacher } from '../../types';
+import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown, Search, Hash } from 'lucide-react';
+import { Student, Book, Teacher, IssueCode } from '../../types';
+import { formatDate } from '../../utils/dateFormatter';
 
 interface IssueBookProps {
   preselectedStudent?: Student | null;
@@ -11,6 +12,8 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
+  const [issueCodes, setIssueCodes] = useState<IssueCode[]>([]);
+  const [activeIssueCodes, setActiveIssueCodes] = useState<string[]>([]);
 
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
@@ -18,6 +21,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
   const [returnDays, setReturnDays] = useState<number | ''> (14);
   const [teacherLimitEnabled, setTeacherLimitEnabled] = useState(false);
   const [copies, setCopies] = useState<number>(1);
+  const [selectedIssueCodes, setSelectedIssueCodes] = useState<string[]>([]);
   
   const [studentSearch, setStudentSearch] = useState('');
   const [isStudentOpen, setIsStudentOpen] = useState(false);
@@ -29,18 +33,24 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
 
   const fetchData = async () => {
     try {
-      const [resStu, resTea, resBks] = await Promise.all([
+      const [resStu, resTea, resBks, resCodes, resIssues] = await Promise.all([
         fetch('/api/students'),
         fetch('/api/teachers'),
         fetch('/api/books'),
+        fetch('/api/issue-codes'),
+        fetch('/api/issued-books'),
       ]);
-      if (resStu.ok && resTea.ok && resBks.ok) {
+      if (resStu.ok && resTea.ok && resBks.ok && resCodes.ok && resIssues.ok) {
         const stuData = await resStu.json();
         const teaData = await resTea.json();
         const bksData = await resBks.json();
+        const codesData = await resCodes.json();
+        const issuesData = await resIssues.json();
         setStudents(stuData);
         setTeachers(teaData);
         setBooks(bksData);
+        setIssueCodes(codesData);
+        setActiveIssueCodes(issuesData.map((i: any) => i.issue_code).filter(Boolean));
 
         if (preselectedStudent) {
           setSelectedStudentId(preselectedStudent.id.toString());
@@ -54,6 +64,25 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
   useEffect(() => {
     fetchData();
   }, [preselectedStudent]);
+
+  useEffect(() => {
+    if (selectedBookId) {
+      const bookIssueCodes = issueCodes
+        .filter(c => c.book_id.toString() === selectedBookId)
+        .map(c => c.full_code)
+        .filter(code => !activeIssueCodes.includes(code));
+      
+      const newCodes = Array(copies).fill('');
+      for (let i = 0; i < copies; i++) {
+        if (bookIssueCodes[i]) {
+          newCodes[i] = bookIssueCodes[i];
+        }
+      }
+      setSelectedIssueCodes(newCodes);
+    } else {
+      setSelectedIssueCodes([]);
+    }
+  }, [selectedBookId, copies, issueCodes, activeIssueCodes]);
 
   const selectedBook = books.find((b) => b.id.toString() === selectedBookId);
   const selectedStudent = students.find((s) => s.id.toString() === selectedStudentId);
@@ -88,6 +117,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
           book_id: selectedBookId,
           return_days: (selectedTeacherId && !teacherLimitEnabled) ? 99999 : returnDays,
           copies: selectedTeacherId ? copies : 1,
+          issue_codes: selectedIssueCodes
         }),
       });
 
@@ -98,6 +128,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
         onSuccessToast(data.message || `Book issued! Return due on ${data.due_date}`);
         setSelectedBookId('');
         setCopies(1);
+        setSelectedIssueCodes([]);
         setSelectedStudentId('');
         setSelectedTeacherId('');
         setStudentSearch('');
@@ -182,6 +213,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                     <div 
                       key={`${b.type}-${b.id}`}
                       onClick={() => {
+                        setCopies(1);
                         if (b.type === 'student') {
                           setSelectedStudentId(b.id.toString());
                           setSelectedTeacherId('');
@@ -201,7 +233,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                           {b.type === 'teacher' ? b.username : b.library_card_no}
                         </span>
                         <span className="ml-2 text-slate-500 text-[11px]">
-                          {b.type === 'student' ? `Class ${b.class}-${b.division} (Roll #${b.roll_no})` : (b.assigned_class ? `Class ${b.assigned_class}` : 'Staff')}
+                          {b.type === 'student' ? `Class ${b.class}-${b.division} (Roll #${b.roll_no})` : (b.assigned_class ? `Class ${b.assigned_class.replace('Class ', '')}` : 'Subject Teacher')}
                         </span>
                         <span className={`ml-2 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${b.type === 'teacher' ? 'text-amber-600 bg-amber-100 border border-amber-200' : 'hidden'}`}>
                           Teacher
@@ -339,8 +371,8 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
           </div>
 
           
-          {/* Copies Selection for Teachers */}
-          {selectedTeacherId && selectedBook && selectedBook.available_copies > 0 && (
+          {/* Copies Selection */}
+          {selectedBook && selectedBook.available_copies > 0 && selectedTeacherId && (
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
                 <BookPlus className="w-4 h-4 text-blue-600" />
@@ -348,7 +380,16 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
               </label>
               <select
                 value={copies}
-                onChange={(e) => setCopies(parseInt(e.target.value))}
+                onChange={(e) => {
+                  const newCopies = parseInt(e.target.value, 10);
+                  setCopies(newCopies);
+                  setSelectedIssueCodes(prev => {
+                    if (newCopies > prev.length) {
+                      return [...prev, ...Array(newCopies - prev.length).fill('')];
+                    }
+                    return prev.slice(0, newCopies);
+                  });
+                }}
                 className="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 font-medium"
               >
                 {Array.from({ length: Math.min(50, selectedBook.available_copies) }, (_, i) => i + 1).map((num) => (
@@ -357,6 +398,42 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {/* Issue Code Selection (1 per copy) */}
+          {selectedBook && selectedBook.available_copies > 0 && (
+            <div className="space-y-3 p-4 bg-slate-50/80 border border-slate-200 rounded-xl">
+              <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Hash className="w-4 h-4 text-blue-600" />
+                Assign Issue Codes
+              </label>
+              <div className="space-y-2">
+                {Array.from({ length: copies }).map((_, index) => {
+                  const bookIssueCodes = issueCodes.filter(c => c.book_id === selectedBook.id && !activeIssueCodes.includes(c.full_code));
+                  return (
+                    <div key={index} className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-slate-500 w-16">Copy {index + 1}:</span>
+                      <select
+                        value={selectedIssueCodes[index] || ''}
+                        onChange={(e) => {
+                          const newCodes = [...selectedIssueCodes];
+                          newCodes[index] = e.target.value;
+                          setSelectedIssueCodes(newCodes);
+                        }}
+                        className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 font-medium text-slate-700"
+                        required
+                      >
+                        {bookIssueCodes.map(code => (
+                          <option key={code.id} value={code.full_code} disabled={selectedIssueCodes.includes(code.full_code) && selectedIssueCodes[index] !== code.full_code}>
+                            {code.full_code}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
           
@@ -410,12 +487,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                   <p className="text-[11px] text-slate-500 mt-2">
                     Calculated Due Date:{' '}
                     <span className="text-blue-700 font-semibold">
-                      {new Date(Date.now() + Number(returnDays) * 86400000).toLocaleDateString(undefined, {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {formatDate(new Date(Date.now() + Number(returnDays) * 86400000).toISOString())}
                     </span>
                   </p>
                 )}

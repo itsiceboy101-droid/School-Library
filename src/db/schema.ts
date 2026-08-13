@@ -50,6 +50,7 @@ export const issued_books = pgTable('issued_books', {
   return_date: varchar('return_date', { length: 50 }),
   status: varchar('status', { length: 50 }).notNull(), // 'issued' | 'returned' | 'overdue'
   fine_amount: integer('fine_amount').default(0),
+  issue_code: varchar('issue_code', { length: 255 }),
 });
 
 export const teachers = pgTable('teachers', {
@@ -60,6 +61,15 @@ export const teachers = pgTable('teachers', {
   password_hash: varchar('password_hash', { length: 255 }).notNull(),
   assigned_class: varchar('assigned_class', { length: 50 }),
   assigned_division: varchar('assigned_division', { length: 50 }),
+  created_at: timestamp('created_at').defaultNow(),
+});
+
+export const issue_codes = pgTable('issue_codes', {
+  id: serial('id').primaryKey(),
+  book_id: integer('book_id').references(() => books.id, { onDelete: 'cascade' }).notNull(),
+  first_two: varchar('first_two', { length: 2 }).notNull(),
+  last_two: varchar('last_two', { length: 2 }).notNull(),
+  full_code: varchar('full_code', { length: 4 }).notNull(),
   created_at: timestamp('created_at').defaultNow(),
 });
 

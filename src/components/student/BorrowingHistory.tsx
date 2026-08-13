@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { History, CheckCircle, Calendar } from 'lucide-react';
 import { Student } from '../../types';
+import { formatDate } from '../../utils/dateFormatter';
 
 interface BorrowingHistoryProps {
   student: Student;
@@ -63,9 +64,9 @@ export const BorrowingHistory: React.FC<BorrowingHistoryProps> = ({ student }) =
                   <tr key={item.id} className="hover:bg-blue-50/50 transition">
                     <td className="px-6 py-3.5 font-bold text-slate-900">{item.book_title}</td>
                     <td className="px-6 py-3.5 text-slate-500">{item.book_author}</td>
-                    <td className="px-6 py-3.5 text-slate-600">{item.issue_date}</td>
+                    <td className="px-6 py-3.5 text-slate-600">{formatDate(item.issue_date)}</td>
                     <td className="px-6 py-3.5 font-semibold text-emerald-700">
-                      {item.return_date || 'Returned'}
+                      {item.return_date ? formatDate(item.return_date) : 'Returned'}
                     </td>
                     <td className="px-6 py-3.5 text-right">
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-medium">

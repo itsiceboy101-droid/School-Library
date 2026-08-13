@@ -26,7 +26,7 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
         if (teacher) {
             studentName = teacher.name + " (Teacher)";
             studentCard = teacher.username;
-            studentClass = teacher.assigned_class ? `Class ${teacher.assigned_class}` : "Staff";
+            studentClass = teacher.assigned_class ? teacher.assigned_class : "Subject Teacher";
         }
       } else if (ib.student_id) {
         const student = await db.query.students.findFirst({ where: eq(students.id, ib.student_id) });
@@ -66,6 +66,7 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
         due_date: ib.due_date,
         status: isOverdue ? "overdue" : "issued",
         days_overdue: daysOverdue,
+        issue_code: ib.issue_code,
       });
     }
     
@@ -76,7 +77,7 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
 });
 
 issuesRouter.post('/', async (req: Request, res: Response) => {
-  const { student_id, teacher_id, book_id, return_days, copies } = req.body;
+  const { student_id, teacher_id, book_id, return_days, copies, issue_codes } = req.body;
   if ((!student_id && !teacher_id) || !book_id) {
     return res.status(400).json({ error: 'Borrower and book are required' });
   }
@@ -128,6 +129,27 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
       }
     }
 
+    if (issue_codes && issue_codes.length > 0) {
+      // Check for duplicates in the request itself
+      const validCodes = issue_codes.filter(Boolean);
+      const uniqueCodes = new Set(validCodes);
+      if (uniqueCodes.size !== validCodes.length) {
+         return res.status(400).json({ error: 'Duplicate issue codes selected in request' });
+      }
+
+      // Check if any of these codes are already active
+      const currentlyIssued = await db.query.issued_books.findMany({
+        where: ne(issued_books.status, 'returned')
+      });
+      const activeCodes = new Set(currentlyIssued.map(i => i.issue_code).filter(Boolean));
+      
+      for (const code of validCodes) {
+        if (activeCodes.has(code)) {
+          return res.status(400).json({ error: `Issue code ${code} is already assigned to an active issue!` });
+        }
+      }
+    }
+
     const issueDate = getTodayStr();
     const dueDate = getTodayStr(days);
 
@@ -140,8 +162,9 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
             teacher_id: tId || null,
             issue_date: issueDate,
             due_date: dueDate,
-            status: 'issued',
-            fine_amount: 0
+            status: 'issued' as const,
+            fine_amount: 0,
+            issue_code: (issue_codes && issue_codes[i]) ? issue_codes[i] : null
           });
         }
         

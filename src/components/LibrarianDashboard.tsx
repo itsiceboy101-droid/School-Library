@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, BookPlus, ArrowDownLeft, Users, BookOpen, FileText, ArrowLeftRight } from 'lucide-react';
+import { Search, BookPlus, ArrowDownLeft, Users, BookOpen, FileText, ArrowLeftRight, KeyRound } from 'lucide-react';
 import { User as LibrarianUser, Student } from '../types';
 import { StudentSearch } from './librarian/StudentSearch';
 import { IssueBook } from './librarian/IssueBook';
@@ -7,13 +7,14 @@ import { ReturnBook } from './librarian/ReturnBook';
 import { StudentsManager } from './librarian/StudentsManager';
 import { BooksManager } from './librarian/BooksManager';
 import { ReportsManager } from './librarian/ReportsManager';
+import { IssueCodeManager } from './librarian/IssueCodeManager';
 
 interface LibrarianDashboardProps {
   user: LibrarianUser;
   onSuccessToast: (msg: string) => void;
 }
 
-type TabType = 'search' | 'desk' | 'students' | 'books' | 'reports';
+type TabType = 'search' | 'desk' | 'students' | 'books' | 'reports' | 'issue-codes';
 
 export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ user, onSuccessToast }) => {
   const [activeTab, setActiveTab] = useState<TabType>('search');
@@ -22,12 +23,14 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ user, on
 
   const handleQuickIssue = (student: Student) => {
     setPreselectedStudent(student);
-    setActiveTab('issue');
+    setActiveTab('desk');
+    setDeskSubTab('issue');
   };
 
   const navItems: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: 'search', label: 'Search Student', icon: <Search className="w-4 h-4" /> },
     { id: 'desk', label: 'Issue & Return Desk', icon: <ArrowLeftRight className="w-4 h-4" /> },
+    { id: 'issue-codes', label: '4-Digit Issue Codes', icon: <KeyRound className="w-4 h-4" /> },
     { id: 'students', label: 'Students Directory', icon: <Users className="w-4 h-4" /> },
     { id: 'books', label: 'Book Catalog', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'reports', label: 'Reports', icon: <FileText className="w-4 h-4" /> },
@@ -95,6 +98,7 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ user, on
             )}
           </div>
         )}
+        {activeTab === 'issue-codes' && <IssueCodeManager onSuccessToast={onSuccessToast} />}
         {activeTab === 'students' && <StudentsManager onSuccessToast={onSuccessToast} />}
         {activeTab === 'books' && <BooksManager onSuccessToast={onSuccessToast} />}
         {activeTab === 'reports' && <ReportsManager />}

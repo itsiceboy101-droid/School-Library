@@ -70,6 +70,7 @@ export interface IssuedBook {
   status: 'issued' | 'returned' | 'overdue';
   fine_amount?: number;
   days_overdue?: number;
+  issue_code?: string | null;
   is_restricted?: boolean;
   restriction_note?: string;
 }
@@ -83,6 +84,17 @@ export interface ReportSummary {
   total_students: number;
   restricted_students_count: number;
   total_fines_collected?: number;
+}
+
+export interface IssueCode {
+  id: number;
+  book_id: number;
+  book_title?: string;
+  book_author?: string;
+  first_two: string;
+  last_two: string;
+  full_code: string;
+  created_at?: string;
 }
 
 export interface AuthState {

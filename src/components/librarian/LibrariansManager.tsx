@@ -84,6 +84,11 @@ export const LibrariansManager: React.FC<LibrariansManagerProps> = ({ onSuccessT
       setError('Name and Email are required.');
       return;
     }
+
+    if (!email.trim().toLowerCase().endsWith('@podar.org')) {
+      setError('Only @podar.org email addresses are allowed for staff.');
+      return;
+    }
     
     // Require password for new accounts
     if (!editingLibrarian && !password.trim()) {
@@ -343,8 +348,6 @@ export const LibrariansManager: React.FC<LibrariansManagerProps> = ({ onSuccessT
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@podar.org"
-                  pattern=".*@podar\\.org$"
-                  title="Email must end with @podar.org"
                   className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
