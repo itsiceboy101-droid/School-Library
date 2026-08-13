@@ -12,8 +12,6 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
-  const [issueCodes, setIssueCodes] = useState<IssueCode[]>([]);
-  const [activeIssueCodes, setActiveIssueCodes] = useState<string[]>([]);
 
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
@@ -21,7 +19,6 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
   const [returnDays, setReturnDays] = useState<number | ''> (14);
   const [teacherLimitEnabled, setTeacherLimitEnabled] = useState(false);
   const [copies, setCopies] = useState<number>(1);
-  const [selectedIssueCodes, setSelectedIssueCodes] = useState<string[]>([]);
   
   const [studentSearch, setStudentSearch] = useState('');
   const [isStudentOpen, setIsStudentOpen] = useState(false);
@@ -33,24 +30,18 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
 
   const fetchData = async () => {
     try {
-      const [resStu, resTea, resBks, resCodes, resIssues] = await Promise.all([
+      const [resStu, resTea, resBks] = await Promise.all([
         fetch('/api/students'),
         fetch('/api/teachers'),
-        fetch('/api/books'),
-        fetch('/api/issue-codes'),
-        fetch('/api/issued-books'),
+        fetch('/api/books')
       ]);
-      if (resStu.ok && resTea.ok && resBks.ok && resCodes.ok && resIssues.ok) {
+      if (resStu.ok && resTea.ok && resBks.ok) {
         const stuData = await resStu.json();
         const teaData = await resTea.json();
         const bksData = await resBks.json();
-        const codesData = await resCodes.json();
-        const issuesData = await resIssues.json();
         setStudents(stuData);
         setTeachers(teaData);
         setBooks(bksData);
-        setIssueCodes(codesData);
-        setActiveIssueCodes(issuesData.map((i: any) => i.issue_code).filter(Boolean));
 
         if (preselectedStudent) {
           setSelectedStudentId(preselectedStudent.id.toString());
@@ -64,25 +55,6 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
   useEffect(() => {
     fetchData();
   }, [preselectedStudent]);
-
-  useEffect(() => {
-    if (selectedBookId) {
-      const bookIssueCodes = issueCodes
-        .filter(c => c.book_id.toString() === selectedBookId)
-        .map(c => c.full_code)
-        .filter(code => !activeIssueCodes.includes(code));
-      
-      const newCodes = Array(copies).fill('');
-      for (let i = 0; i < copies; i++) {
-        if (bookIssueCodes[i]) {
-          newCodes[i] = bookIssueCodes[i];
-        }
-      }
-      setSelectedIssueCodes(newCodes);
-    } else {
-      setSelectedIssueCodes([]);
-    }
-  }, [selectedBookId, copies, issueCodes, activeIssueCodes]);
 
   const selectedBook = books.find((b) => b.id.toString() === selectedBookId);
   const selectedStudent = students.find((s) => s.id.toString() === selectedStudentId);
@@ -116,8 +88,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
           teacher_id: selectedTeacherId || undefined,
           book_id: selectedBookId,
           return_days: (selectedTeacherId && !teacherLimitEnabled) ? 99999 : returnDays,
-          copies: selectedTeacherId ? copies : 1,
-          issue_codes: selectedIssueCodes
+          copies: selectedTeacherId ? copies : 1
         }),
       });
 
@@ -128,7 +99,6 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
         onSuccessToast(data.message || `Book issued! Return due on ${data.due_date}`);
         setSelectedBookId('');
         setCopies(1);
-        setSelectedIssueCodes([]);
         setSelectedStudentId('');
         setSelectedTeacherId('');
         setStudentSearch('');
@@ -383,12 +353,6 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                 onChange={(e) => {
                   const newCopies = parseInt(e.target.value, 10);
                   setCopies(newCopies);
-                  setSelectedIssueCodes(prev => {
-                    if (newCopies > prev.length) {
-                      return [...prev, ...Array(newCopies - prev.length).fill('')];
-                    }
-                    return prev.slice(0, newCopies);
-                  });
                 }}
                 className="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 font-medium"
               >
@@ -401,41 +365,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
             </div>
           )}
 
-          {/* Issue Code Selection (1 per copy) */}
-          {selectedBook && selectedBook.available_copies > 0 && (
-            <div className="space-y-3 p-4 bg-slate-50/80 border border-slate-200 rounded-xl">
-              <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <Hash className="w-4 h-4 text-blue-600" />
-                Assign Issue Codes
-              </label>
-              <div className="space-y-2">
-                {Array.from({ length: copies }).map((_, index) => {
-                  const bookIssueCodes = issueCodes.filter(c => c.book_id === selectedBook.id && !activeIssueCodes.includes(c.full_code));
-                  return (
-                    <div key={index} className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-slate-500 w-16">Copy {index + 1}:</span>
-                      <select
-                        value={selectedIssueCodes[index] || ''}
-                        onChange={(e) => {
-                          const newCodes = [...selectedIssueCodes];
-                          newCodes[index] = e.target.value;
-                          setSelectedIssueCodes(newCodes);
-                        }}
-                        className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 font-medium text-slate-700"
-                        required
-                      >
-                        {bookIssueCodes.map(code => (
-                          <option key={code.id} value={code.full_code} disabled={selectedIssueCodes.includes(code.full_code) && selectedIssueCodes[index] !== code.full_code}>
-                            {code.full_code}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Issue Code Selection (Removed as it is now auto-assigned in the backend) */}
           
           {/* Return Days Selection */}
           <div className="space-y-4">

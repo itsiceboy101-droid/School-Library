@@ -129,26 +129,29 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
       }
     }
 
-    if (issue_codes && issue_codes.length > 0) {
-      // Check for duplicates in the request itself
-      const validCodes = issue_codes.filter(Boolean);
-      const uniqueCodes = new Set(validCodes);
-      if (uniqueCodes.size !== validCodes.length) {
-         return res.status(400).json({ error: 'Duplicate issue codes selected in request' });
-      }
-
-      // Check if any of these codes are already active
-      const currentlyIssued = await db.query.issued_books.findMany({
-        where: ne(issued_books.status, 'returned')
-      });
-      const activeCodes = new Set(currentlyIssued.map(i => i.issue_code).filter(Boolean));
+    // Auto-assign issue codes in the backend
+    const allCodesForBook = await db.query.issue_codes.findMany({
+      where: eq(issue_codes.book_id, bId),
+      orderBy: (issue_codes, { asc }) => [asc(issue_codes.id)]
+    });
+    
+    const currentlyActiveIssues = await db.query.issued_books.findMany({
+      where: and(
+        eq(issued_books.book_id, bId),
+        ne(issued_books.status, 'returned')
+      )
+    });
+    const activeCodeSet = new Set(currentlyActiveIssues.map(i => i.issue_code).filter(Boolean));
+    
+    const availableCodes = allCodesForBook
+      .map(c => c.full_code)
+      .filter(code => !activeCodeSet.has(code));
       
-      for (const code of validCodes) {
-        if (activeCodes.has(code)) {
-          return res.status(400).json({ error: `Issue code ${code} is already assigned to an active issue!` });
-        }
-      }
+    if (availableCodes.length < numCopies) {
+      return res.status(400).json({ error: `Not enough available issue codes. Available: ${availableCodes.length}, Requested: ${numCopies}` });
     }
+
+    const assignedCodes = availableCodes.slice(0, numCopies);
 
     const issueDate = getTodayStr();
     const dueDate = getTodayStr(days);
@@ -164,7 +167,7 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
             due_date: dueDate,
             status: 'issued' as const,
             fine_amount: 0,
-            issue_code: (issue_codes && issue_codes[i]) ? issue_codes[i] : null
+            issue_code: assignedCodes[i]
           });
         }
         
