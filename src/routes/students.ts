@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { students, issued_books } from '../db/schema';
-import { eq, ilike, or } from 'drizzle-orm';
+import { eq, like, or } from 'drizzle-orm';
 
 export const studentsRouter = Router();
 

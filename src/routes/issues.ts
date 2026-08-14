@@ -130,32 +130,10 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
     }
 
     // Auto-assign issue codes in the backend
-    let allCodesForBook = await db.query.issue_codes.findMany({
+    const allCodesForBook = await db.query.issue_codes.findMany({
       where: eq(issue_codes.book_id, bId),
       orderBy: (issue_codes, { asc }) => [asc(issue_codes.id)]
     });
-    
-    // Auto-generate missing codes if they don't exist in the database up to total_copies
-    if (allCodesForBook.length < book.total_copies) {
-      const firstTwo = allCodesForBook.length > 0 ? allCodesForBook[0].first_two : String(book.id % 100).padStart(2, '0');
-      const insertions = [];
-      for (let i = allCodesForBook.length + 1; i <= book.total_copies; i++) {
-        const formattedLastTwo = String(i).padStart(2, '0');
-        insertions.push({
-          book_id: bId,
-          first_two: firstTwo,
-          last_two: formattedLastTwo,
-          full_code: `${firstTwo}${formattedLastTwo}`,
-        });
-      }
-      if (insertions.length > 0) {
-        await db.insert(issue_codes).values(insertions);
-        allCodesForBook = await db.query.issue_codes.findMany({
-          where: eq(issue_codes.book_id, bId),
-          orderBy: (issue_codes, { asc }) => [asc(issue_codes.id)]
-        });
-      }
-    }
     
     const currentlyActiveIssues = await db.query.issued_books.findMany({
       where: and(

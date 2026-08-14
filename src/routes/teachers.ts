@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { teachers, students } from '../db/schema';
-import { eq, and, ilike } from 'drizzle-orm';
+import { eq, and, like } from 'drizzle-orm';
 
 export const teachersRouter = Router();
 
@@ -64,14 +64,14 @@ teachersRouter.post('/', async (req: Request, res: Response) => {
 
   try {
     const existingEmail = await db.query.teachers.findFirst({
-      where: ilike(teachers.email, email.trim()),
+      where: like(teachers.email, email.trim()),
     });
     if (existingEmail) {
       return res.status(400).json({ error: 'Teacher email already registered' });
     }
 
     const existingUsername = await db.query.teachers.findFirst({
-      where: ilike(teachers.username, username.trim()),
+      where: like(teachers.username, username.trim()),
     });
     if (existingUsername) {
       return res.status(400).json({ error: 'Teacher username already exists' });

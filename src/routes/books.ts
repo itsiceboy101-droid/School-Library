@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { books, issued_books, issue_codes } from '../db/schema';
-import { eq, ilike, or, and, ne, isNull } from 'drizzle-orm';
+import { eq, like, or, and, ne, isNull } from 'drizzle-orm';
 
 export const booksRouter = Router();
 
@@ -25,8 +25,8 @@ booksRouter.get('/search', async (req: Request, res: Response) => {
   try {
     const searchResults = await db.query.books.findMany({
       where: or(
-        ilike(books.title, `%${query}%`),
-        ilike(books.author, `%${query}%`)
+        like(books.title, `%${query}%`),
+        like(books.author, `%${query}%`)
       ),
       limit: 10
     });

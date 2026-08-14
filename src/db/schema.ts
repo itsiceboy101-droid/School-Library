@@ -1,75 +1,70 @@
 import {
-  pgTable,
-  serial,
-  varchar,
-  text,
+  sqliteTable,
   integer,
-  timestamp,
-  boolean,
-} from 'drizzle-orm/pg-core';
+  text,
+} from 'drizzle-orm/sqlite-core';
 
-export const librarians = pgTable('librarians', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  password_hash: varchar('password_hash', { length: 255 }).notNull(),
-  role: varchar('role', { length: 50 }).notNull(), // 'librarian' | 'head_librarian'
-  created_at: timestamp('created_at').defaultNow(),
+export const librarians = sqliteTable('librarians', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  password_hash: text('password_hash').notNull(),
+  role: text('role').notNull(), // 'librarian' | 'head_librarian'
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
 });
 
-export const students = pgTable('students', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  class: varchar('class', { length: 50 }).notNull(),
-  division: varchar('division', { length: 50 }).notNull(),
-  roll_no: varchar('roll_no', { length: 50 }).notNull(),
-  library_card_no: varchar('library_card_no', { length: 255 }).notNull().unique(),
-  password_hash: varchar('password_hash', { length: 255 }).notNull(),
-  created_at: timestamp('created_at').defaultNow(),
+export const students = sqliteTable('students', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  class: text('class').notNull(),
+  division: text('division').notNull(),
+  roll_no: text('roll_no').notNull(),
+  library_card_no: text('library_card_no').notNull().unique(),
+  password_hash: text('password_hash').notNull(),
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
 });
 
-export const books = pgTable('books', {
-  id: serial('id').primaryKey(),
-  title: varchar('title', { length: 255 }).notNull(),
-  author: varchar('author', { length: 255 }).notNull(),
-  category: varchar('category', { length: 255 }),
-  isbn: varchar('isbn', { length: 255 }),
-  publisher: varchar('publisher', { length: 255 }),
+export const books = sqliteTable('books', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  title: text('title').notNull(),
+  author: text('author').notNull(),
+  category: text('category'),
+  isbn: text('isbn'),
+  publisher: text('publisher'),
   total_copies: integer('total_copies').notNull(),
   available_copies: integer('available_copies').notNull(),
-  added_at: timestamp('added_at').defaultNow(),
+  added_at: text('added_at').default('CURRENT_TIMESTAMP'),
 });
 
-export const issued_books = pgTable('issued_books', {
-  id: serial('id').primaryKey(),
+export const issued_books = sqliteTable('issued_books', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   book_id: integer('book_id').references(() => books.id, { onDelete: 'cascade' }).notNull(),
   student_id: integer('student_id').references(() => students.id, { onDelete: 'cascade' }),
   teacher_id: integer('teacher_id').references(() => teachers.id, { onDelete: 'cascade' }),
-  issue_date: varchar('issue_date', { length: 50 }).notNull(), // YYYY-MM-DD
-  due_date: varchar('due_date', { length: 50 }).notNull(), // YYYY-MM-DD
-  return_date: varchar('return_date', { length: 50 }),
-  status: varchar('status', { length: 50 }).notNull(), // 'issued' | 'returned' | 'overdue'
+  issue_date: text('issue_date').notNull(), // YYYY-MM-DD
+  due_date: text('due_date').notNull(), // YYYY-MM-DD
+  return_date: text('return_date'),
+  status: text('status').notNull(), // 'issued' | 'returned' | 'overdue'
   fine_amount: integer('fine_amount').default(0),
-  issue_code: varchar('issue_code', { length: 255 }),
+  issue_code: text('issue_code'),
 });
 
-export const teachers = pgTable('teachers', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  username: varchar('username', { length: 255 }).notNull().unique(),
-  password_hash: varchar('password_hash', { length: 255 }).notNull(),
-  assigned_class: varchar('assigned_class', { length: 50 }),
-  assigned_division: varchar('assigned_division', { length: 50 }),
-  created_at: timestamp('created_at').defaultNow(),
+export const teachers = sqliteTable('teachers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  username: text('username').notNull().unique(),
+  password_hash: text('password_hash').notNull(),
+  assigned_class: text('assigned_class'),
+  assigned_division: text('assigned_division'),
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
 });
 
-export const issue_codes = pgTable('issue_codes', {
-  id: serial('id').primaryKey(),
+export const issue_codes = sqliteTable('issue_codes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   book_id: integer('book_id').references(() => books.id, { onDelete: 'cascade' }).notNull(),
-  first_two: varchar('first_two', { length: 2 }).notNull(),
-  last_two: varchar('last_two', { length: 2 }).notNull(),
-  full_code: varchar('full_code', { length: 4 }).notNull(),
-  created_at: timestamp('created_at').defaultNow(),
+  first_two: text('first_two').notNull(),
+  last_two: text('last_two').notNull(),
+  full_code: text('full_code').notNull(),
+  created_at: text('created_at').default('CURRENT_TIMESTAMP'),
 });
-

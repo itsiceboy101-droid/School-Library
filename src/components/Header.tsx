@@ -96,6 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               <button
+                id="btn-logout"
                 onClick={onLogout}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-blue-200 transition"
               >

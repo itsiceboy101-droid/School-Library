@@ -69,6 +69,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         {/* 2 Platform Switcher Tabs */}
         <div className="grid grid-cols-2 p-1.5 bg-sky-50/70 border-b border-blue-200 text-center gap-1.5">
           <button
+            id="tab-librarian"
             type="button"
             onClick={() => handleTabChange('librarian')}
             className={`py-2.5 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
@@ -82,6 +83,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </button>
 
           <button
+            id="tab-student"
             type="button"
             onClick={() => handleTabChange('student')}
             className={`py-2.5 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
@@ -139,6 +141,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400/80 absolute left-3 top-3" />
                   <input
+                    id="input-librarian-email"
                     type="text"
                     value={emailOrPass}
                     onChange={(e) => setEmailOrPass(e.target.value)}
@@ -155,6 +158,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <div className="relative">
                   <CreditCard className="w-4 h-4 text-slate-400/80 absolute left-3 top-3" />
                   <input
+                    id="input-student-card"
                     type="text"
                     value={cardNo}
                     onChange={(e) => setCardNo(e.target.value.replace(/\s+/g, '-').toUpperCase())}
@@ -172,6 +176,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400/80 absolute left-3 top-3" />
                 <input
+                  id="input-password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -179,6 +184,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   className="w-full pl-9 pr-10 py-2.5 bg-white/80 border border-blue-200 rounded-xl text-sm text-slate-800 placeholder-slate-400/60 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono"
                 />
                 <button
+                  id="btn-toggle-password"
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition"
@@ -190,6 +196,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
 
             <button
+              id="btn-submit-login"
               type="submit"
               disabled={loading}
               className={`w-full py-3 rounded-xl font-bold text-sm text-white shadow-md transition flex items-center justify-center gap-2 ${
