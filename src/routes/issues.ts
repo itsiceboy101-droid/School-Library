@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
-import { books, issued_books, students, teachers } from '../db/schema';
+import { books, issued_books, students, teachers, issue_codes } from '../db/schema';
 import { eq, and, ne } from 'drizzle-orm';
 import { getTodayStr, getStudentRestrictionStatus } from '../db/utils';
 
@@ -77,7 +77,7 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
 });
 
 issuesRouter.post('/', async (req: Request, res: Response) => {
-  const { student_id, teacher_id, book_id, return_days, copies, issue_codes } = req.body;
+  const { student_id, teacher_id, book_id, return_days, copies } = req.body;
   if ((!student_id && !teacher_id) || !book_id) {
     return res.status(400).json({ error: 'Borrower and book are required' });
   }
@@ -130,10 +130,32 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
     }
 
     // Auto-assign issue codes in the backend
-    const allCodesForBook = await db.query.issue_codes.findMany({
+    let allCodesForBook = await db.query.issue_codes.findMany({
       where: eq(issue_codes.book_id, bId),
       orderBy: (issue_codes, { asc }) => [asc(issue_codes.id)]
     });
+    
+    // Auto-generate missing codes if they don't exist in the database up to total_copies
+    if (allCodesForBook.length < book.total_copies) {
+      const firstTwo = allCodesForBook.length > 0 ? allCodesForBook[0].first_two : String(book.id % 100).padStart(2, '0');
+      const insertions = [];
+      for (let i = allCodesForBook.length + 1; i <= book.total_copies; i++) {
+        const formattedLastTwo = String(i).padStart(2, '0');
+        insertions.push({
+          book_id: bId,
+          first_two: firstTwo,
+          last_two: formattedLastTwo,
+          full_code: `${firstTwo}${formattedLastTwo}`,
+        });
+      }
+      if (insertions.length > 0) {
+        await db.insert(issue_codes).values(insertions);
+        allCodesForBook = await db.query.issue_codes.findMany({
+          where: eq(issue_codes.book_id, bId),
+          orderBy: (issue_codes, { asc }) => [asc(issue_codes.id)]
+        });
+      }
+    }
     
     const currentlyActiveIssues = await db.query.issued_books.findMany({
       where: and(
@@ -147,11 +169,14 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
       .map(c => c.full_code)
       .filter(code => !activeCodeSet.has(code));
       
-    if (availableCodes.length < numCopies) {
-      return res.status(400).json({ error: `Not enough available issue codes. Available: ${availableCodes.length}, Requested: ${numCopies}` });
+    const assignedCodes = [];
+    for (let i = 0; i < numCopies; i++) {
+       if (i < availableCodes.length) {
+         assignedCodes.push(availableCodes[i]);
+       } else {
+         assignedCodes.push(null);
+       }
     }
-
-    const assignedCodes = availableCodes.slice(0, numCopies);
 
     const issueDate = getTodayStr();
     const dueDate = getTodayStr(days);

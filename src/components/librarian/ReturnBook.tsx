@@ -214,19 +214,15 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                         {item.copies > 1 ? (
                           <select className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded px-2 py-1 focus:outline-none">
                             {item.issue_codes.map((code: string | null, idx: number) => (
-                              code && (
-                                <option key={idx} value={code}>
-                                  🔑 {code}
-                                </option>
-                              )
+                              <option key={idx} value={code || ''}>
+                                {code ? `🔑 ${code}` : 'N/A'}
+                              </option>
                             ))}
                           </select>
                         ) : (
-                          item.issue_codes[0] && (
-                            <span className="font-mono text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                              🔑 {item.issue_codes[0]}
-                            </span>
-                          )
+                          <span className="font-mono text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                            {item.issue_codes[0] ? `🔑 ${item.issue_codes[0]}` : 'N/A'}
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

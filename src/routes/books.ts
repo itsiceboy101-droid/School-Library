@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { books, issued_books, issue_codes } from '../db/schema';
-import { eq, ilike, or, and, ne } from 'drizzle-orm';
+import { eq, ilike, or, and, ne, isNull } from 'drizzle-orm';
 
 export const booksRouter = Router();
 
@@ -145,6 +145,39 @@ booksRouter.put('/:id', async (req: Request, res: Response) => {
       }
       if (insertions.length > 0) {
         await db.insert(issue_codes).values(insertions);
+      }
+    }
+
+    // Auto-assign issue codes to any active issues that are currently missing them (N/A)
+    const missingCodeIssues = await db.query.issued_books.findMany({
+      where: and(
+        eq(issued_books.book_id, id),
+        isNull(issued_books.issue_code),
+        ne(issued_books.status, 'returned')
+      )
+    });
+    
+    if (missingCodeIssues.length > 0) {
+      const allCodesForBook = await db.query.issue_codes.findMany({
+        where: eq(issue_codes.book_id, id)
+      });
+      const currentlyActiveIssues = await db.query.issued_books.findMany({
+        where: and(
+          eq(issued_books.book_id, id),
+          ne(issued_books.status, 'returned')
+        )
+      });
+      const activeCodeSet = new Set(currentlyActiveIssues.map(i => i.issue_code).filter(Boolean));
+      const availableCodes = allCodesForBook.map(c => c.full_code).filter(code => !activeCodeSet.has(code));
+      
+      let codeIdx = 0;
+      for (const issue of missingCodeIssues) {
+        if (codeIdx < availableCodes.length) {
+          await db.update(issued_books)
+            .set({ issue_code: availableCodes[codeIdx] })
+            .where(eq(issued_books.id, issue.id));
+          codeIdx++;
+        }
       }
     }
 
