@@ -97,7 +97,6 @@ export default function App() {
           setUserType(null);
           setCurrentUser(null);
         }}
-        onQuickLogin={handleQuickLogin}
         onResetDemo={handleResetDemo}
       />
 

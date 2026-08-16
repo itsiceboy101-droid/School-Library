@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, GraduationCap, Lock, Mail, CreditCard, AlertCircle, Key, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Shield, GraduationCap, Lock, Mail, CreditCard, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 interface LoginModalProps {
   initialRole?: 'librarian' | 'student';
@@ -16,12 +16,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     initialRole === 'student' ? 'student' : 'librarian'
   );
 
-  // Form states - empty by default with placeholders
+  // Form states
   const [emailOrPass, setEmailOrPass] = useState('');
   const [password, setPassword] = useState('');
   const [cardNo, setCardNo] = useState('');
+  
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +66,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   return (
     <div className="min-h-[calc(100vh-80px)] py-12 px-4 flex items-center justify-center">
       <div className="max-w-md w-full bg-white/90 backdrop-blur-xs border border-blue-200 rounded-2xl shadow-xl overflow-hidden">
+        
         {/* 2 Platform Switcher Tabs */}
         <div className="grid grid-cols-2 p-1.5 bg-sky-50/70 border-b border-blue-200 text-center gap-1.5">
           <button
@@ -81,7 +82,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <Shield className="w-4 h-4" />
             Librarian & Teacher Portal
           </button>
-
           <button
             id="tab-student"
             type="button"
@@ -113,11 +113,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <GraduationCap className="w-7 h-7" />
               )}
             </div>
-
             <h2 className="text-xl font-bold text-slate-900">
               {platform === 'librarian' ? 'Librarian & Teacher Login' : 'Student Portal Access'}
             </h2>
-
             <p className="text-xs text-slate-500 mt-1">
               {platform === 'librarian'
                 ? 'Sign in with your @podar.org email or username to access the system'
@@ -212,9 +210,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 : 'Access Student Account'}
             </button>
           </form>
+
         </div>
       </div>
     </div>
   );
 };
-

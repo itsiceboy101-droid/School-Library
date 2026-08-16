@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { books, issued_books, issue_codes } from '../db/schema';
-import { eq, like, or, and, ne, isNull } from 'drizzle-orm';
+import { eq, ilike, or, and, ne, isNull } from 'drizzle-orm';
 
 export const booksRouter = Router();
 
@@ -25,8 +25,8 @@ booksRouter.get('/search', async (req: Request, res: Response) => {
   try {
     const searchResults = await db.query.books.findMany({
       where: or(
-        like(books.title, `%${query}%`),
-        like(books.author, `%${query}%`)
+        ilike(books.title, `%${query}%`),
+        ilike(books.author, `%${query}%`)
       ),
       limit: 10
     });
@@ -52,22 +52,6 @@ booksRouter.post('/', async (req: Request, res: Response) => {
       total_copies: parseInt(total_copies, 10),
       available_copies: parseInt(total_copies, 10),
     }).returning();
-
-    // Auto-generate issue codes for the new book so auto-assign works immediately
-    const firstTwo = String(newBook[0].id % 100).padStart(2, '0');
-    const insertions = [];
-    for (let i = 1; i <= parseInt(total_copies, 10); i++) {
-      const formattedLastTwo = String(i).padStart(2, '0');
-      insertions.push({
-        book_id: newBook[0].id,
-        first_two: firstTwo,
-        last_two: formattedLastTwo,
-        full_code: `${firstTwo}${formattedLastTwo}`,
-      });
-    }
-    if (insertions.length > 0) {
-      await db.insert(issue_codes).values(insertions);
-    }
 
     res.status(201).json({
       message: 'Book added successfully',
@@ -116,22 +100,7 @@ booksRouter.put('/:id', async (req: Request, res: Response) => {
       orderBy: (issue_codes, { asc }) => [asc(issue_codes.id)]
     });
 
-    if (existingCodes.length === 0) {
-      const firstTwo = String(id % 100).padStart(2, '0');
-      const insertions = [];
-      for (let i = 1; i <= newTotal; i++) {
-        const formattedLastTwo = String(i).padStart(2, '0');
-        insertions.push({
-          book_id: id,
-          first_two: firstTwo,
-          last_two: formattedLastTwo,
-          full_code: `${firstTwo}${formattedLastTwo}`,
-        });
-      }
-      if (insertions.length > 0) {
-        await db.insert(issue_codes).values(insertions);
-      }
-    } else if (newTotal > existingCodes.length) {
+    if (existingCodes.length > 0 && newTotal > existingCodes.length) {
       const firstTwo = existingCodes[0].first_two;
       const insertions = [];
       for (let i = existingCodes.length + 1; i <= newTotal; i++) {

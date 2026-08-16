@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
 import { librarians, students, teachers } from '../db/schema';
-import { eq, like, or, and } from 'drizzle-orm';
+import { eq, ilike, or, and } from 'drizzle-orm';
 
 export const authRouter = Router();
 
@@ -40,9 +40,9 @@ authRouter.post('/login-librarian', async (req: Request, res: Response) => {
 
 // Try finding Teacher
     const teacher = await db.query.teachers.findFirst({
-      where: (teachers, { or, eq, like }) => or(
-        like(teachers.username, email.trim()),
-        like(teachers.email, email.trim())
+      where: (teachers, { or, eq, ilike }) => or(
+        ilike(teachers.username, email.trim()),
+        ilike(teachers.email, email.trim())
       )
     });
     if (teacher && teacher.password_hash === password) {
@@ -95,11 +95,16 @@ authRouter.post('/login-student', async (req: Request, res: Response) => {
 
   try {
     // 1. Try finding student by library_card_no / username
-    const student = await db.query.students.findFirst({
-      where: like(students.library_card_no, card_no.trim()),
+    const matchingStudents = await db.query.students.findMany({
+      where: (students, { or, eq, ilike }) => or(
+        eq(students.library_card_no, card_no.trim()),
+        ilike(students.library_card_no, card_no.trim())
+      ),
     });
 
-    if (student && student.password_hash === password) {
+    const student = matchingStudents.find(s => s.password_hash === password);
+
+    if (student) {
       // Find class teacher name for student's class and division
       let classTeacherName: string | null = 'Not Assigned';
       if (student.class && student.division) {
@@ -132,9 +137,9 @@ authRouter.post('/login-student', async (req: Request, res: Response) => {
 
     // 2. If student not found or password didn't match, try finding Teacher
     const teacher = await db.query.teachers.findFirst({
-      where: (teachers, { or, eq, like }) => or(
-        like(teachers.username, card_no.trim()),
-        like(teachers.email, card_no.trim())
+      where: (teachers, { or, eq, ilike }) => or(
+        ilike(teachers.username, card_no.trim()),
+        ilike(teachers.email, card_no.trim())
       )
     });
 

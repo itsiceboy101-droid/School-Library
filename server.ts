@@ -17,6 +17,14 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Handle JSON parsing errors from body-parser
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err instanceof SyntaxError && 'status' in err && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Invalid JSON payload' });
+  }
+  next(err);
+});
+
 // Apply routers
 app.use('/api/auth', authRouter);
 app.use('/api/students', studentsRouter);

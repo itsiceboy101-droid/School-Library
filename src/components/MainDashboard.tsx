@@ -15,13 +15,13 @@ interface MainDashboardProps {
   onSuccessToast: (msg: string) => void;
 }
 
-type MainTab = 'analytics' | 'teachers' | 'librarians' | 'students' | 'books' | 'desk' | 'issue-codes';
+type MainTab = 'analytics' | 'teachers' | 'librarians' | 'students' | 'books' | 'desk';
 
 export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToast }) => {
   const [activeTab, setActiveTab] = useState<MainTab>('analytics');
   const [openAddLibrarian, setOpenAddLibrarian] = useState(false);
   const [openAddStudent, setOpenAddStudent] = useState(false);
-  const [deskSubTab, setDeskSubTab] = useState<'issue' | 'return'>('issue');
+  const [deskSubTab, setDeskSubTab] = useState<'issue' | 'return' | 'issue-codes'>('issue');
 
   const handleAddTeacherClick = () => {
     setActiveTab('teachers');
@@ -44,7 +44,6 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
     { id: 'students', label: 'Student Directory', icon: <Users className="w-4 h-4" /> },
     { id: 'books', label: 'Book Catalog', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'desk', label: 'Issue & Return Desk', icon: <ArrowLeftRight className="w-4 h-4" /> },
-    { id: 'issue-codes', label: '4-Digit Issue Codes', icon: <KeyRound className="w-4 h-4" /> },
   ];
 
   return (
@@ -148,39 +147,43 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
 
         {activeTab === 'desk' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-center gap-2 bg-white border border-blue-200 p-1.5 rounded-2xl max-w-sm mx-auto shadow-xs">
+            <div className="flex items-center justify-center gap-2 bg-white border border-blue-200 p-1.5 rounded-2xl max-w-lg mx-auto shadow-xs flex-wrap">
               <button
                 onClick={() => setDeskSubTab('issue')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                className={`flex-1 min-w-[100px] py-2 rounded-xl text-xs font-bold transition ${
                   deskSubTab === 'issue'
                     ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
                 Issue Book
               </button>
               <button
                 onClick={() => setDeskSubTab('return')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                className={`flex-1 min-w-[100px] py-2 rounded-xl text-xs font-bold transition ${
                   deskSubTab === 'return'
                     ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
                 Return Book
               </button>
+              <button
+                onClick={() => setDeskSubTab('issue-codes')}
+                className={`flex-1 min-w-[140px] py-2 rounded-xl text-xs font-bold transition ${
+                  deskSubTab === 'issue-codes'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                4-Digit Issue Codes
+              </button>
             </div>
 
-            {deskSubTab === 'issue' ? (
-              <IssueBook onSuccessToast={onSuccessToast} />
-            ) : (
-              <ReturnBook onSuccessToast={onSuccessToast} />
-            )}
+            {deskSubTab === 'issue' && <IssueBook onSuccessToast={onSuccessToast} />}
+            {deskSubTab === 'return' && <ReturnBook onSuccessToast={onSuccessToast} />}
+            {deskSubTab === 'issue-codes' && <IssueCodeManager onSuccessToast={onSuccessToast} />}
           </div>
-        )}
-
-        {activeTab === 'issue-codes' && (
-          <IssueCodeManager onSuccessToast={onSuccessToast} />
         )}
       </div>
     </div>

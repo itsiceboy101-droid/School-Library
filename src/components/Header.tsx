@@ -7,7 +7,6 @@ interface HeaderProps {
   currentUser: LibrarianUser | Student | Teacher | null;
   onLogout: () => void;
   onSwitchPortal: (role: 'librarian' | 'student') => void;
-  onQuickLogin: (role: 'librarian' | 'student', idOrEmail?: string) => void;
   onResetDemo: () => void;
 }
 

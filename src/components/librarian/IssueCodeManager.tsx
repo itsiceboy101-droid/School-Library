@@ -116,29 +116,28 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
     }
   };
 
-  const filteredCodes = codesList.filter(c => {
+  const groupedByBook = booksList.map(book => {
+    const bookCodes = codesList.filter(c => c.book_id === book.id);
+    return {
+      book_id: book.id,
+      book_title: book.title,
+      book_author: book.author,
+      first_two: bookCodes.length > 0 ? bookCodes[0].first_two : null,
+      created_at: bookCodes.length > 0 ? bookCodes[0].created_at : book.added_at,
+      all_codes: bookCodes
+    };
+  });
+
+  const filteredGroups = groupedByBook.filter(g => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
-      (c.book_title && c.book_title.toLowerCase().includes(q)) ||
-      (c.book_author && c.book_author.toLowerCase().includes(q)) ||
-      c.full_code.includes(q) ||
-      c.first_two.includes(q)
+      (g.book_title && g.book_title.toLowerCase().includes(q)) ||
+      (g.book_author && g.book_author.toLowerCase().includes(q)) ||
+      (g.first_two && g.first_two.includes(q)) ||
+      g.all_codes.some(c => c.full_code.includes(q))
     );
   });
-
-  const groupedCodes = Object.values(
-    filteredCodes.reduce((acc, code) => {
-      if (!acc[code.book_id]) {
-        acc[code.book_id] = {
-          ...code,
-          all_codes: []
-        };
-      }
-      acc[code.book_id].all_codes.push(code);
-      return acc;
-    }, {} as Record<number, IssueCode & { all_codes: IssueCode[] }>)
-  ) as (IssueCode & { all_codes: IssueCode[] })[];
 
   const previewFirstTwo = firstTwoInput.trim().padStart(2, '0').slice(0, 2);
   const selectedBookObj = booksList.find(b => b.id.toString() === selectedBookId);
@@ -264,7 +263,7 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
           <div className="flex items-center gap-2">
             <Hash className="w-4 h-4 text-blue-600" />
             <h3 className="text-sm font-extrabold text-slate-800">
-              Generated Issue Codes ({filteredCodes.length})
+              Generated Issue Codes ({filteredGroups.length})
             </h3>
           </div>
 
@@ -293,14 +292,14 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
               </tr>
             </thead>
             <tbody className="divide-y divide-blue-100">
-              {groupedCodes.length === 0 ? (
+              {filteredGroups.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-10 text-center text-slate-400 font-medium">
-                    No 4-digit issue codes generated yet. Use the form above to select a book and generate a code.
+                    No books found. Use the form above to select a book and generate a code.
                   </td>
                 </tr>
               ) : (
-                groupedCodes.map((group) => (
+                filteredGroups.map((group) => (
                   <tr key={group.book_id} className="hover:bg-blue-50/50 transition">
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-800 text-sm">{group.book_title || 'Unknown Book'}</div>
@@ -308,17 +307,27 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-extrabold bg-blue-100 text-blue-800 border border-blue-300">
-                        {group.first_two}
-                      </span>
+                      {group.first_two ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-extrabold bg-blue-100 text-blue-800 border border-blue-300">
+                          {group.first_two}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                          N/A
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      <select className="px-3 py-1.5 bg-slate-900 text-amber-300 border border-slate-700 rounded-xl text-sm font-mono font-black shadow-xs focus:outline-none appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FCD34D%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:10px_10px] bg-[right_10px_center]">
-                        {group.all_codes.map(c => (
-                          <option key={c.id} value={c.id}>{c.full_code}</option>
-                        ))}
-                      </select>
+                      {group.all_codes.length > 0 ? (
+                        <select className="px-3 py-1.5 bg-slate-900 text-amber-300 border border-slate-700 rounded-xl text-sm font-mono font-black shadow-xs focus:outline-none appearance-none pr-8 relative bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FCD34D%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[length:10px_10px] bg-[right_10px_center]">
+                          {group.all_codes.map(c => (
+                            <option key={c.id} value={c.id}>{c.full_code}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-semibold italic">N/A</span>
+                      )}
                     </td>
 
                     <td className="px-6 py-4 text-slate-500 text-[11px] font-medium">
@@ -326,15 +335,19 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
                     </td>
 
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleDeleteGroup(group.all_codes)}
-                        disabled={deletingId === group.book_id}
-                        className="px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition disabled:opacity-50 inline-flex items-center gap-1"
-                        title="Delete All Codes for Book"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete Codes
-                      </button>
+                      {group.all_codes.length > 0 ? (
+                        <button
+                          onClick={() => handleDeleteGroup(group.all_codes)}
+                          disabled={deletingId === group.book_id}
+                          className="px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition disabled:opacity-50 inline-flex items-center gap-1"
+                          title="Delete All Codes for Book"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete Codes
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">No codes</span>
+                      )}
                     </td>
                   </tr>
                 ))

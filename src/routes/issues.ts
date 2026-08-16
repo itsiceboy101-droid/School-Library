@@ -159,7 +159,7 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
     const issueDate = getTodayStr();
     const dueDate = getTodayStr(days);
 
-    const newIssues = await db.transaction(async (tx) => {
+    const newIssues = await (async () => {
         const insertions = [];
         for (let i = 0; i < numCopies; i++) {
           insertions.push({
@@ -174,14 +174,14 @@ issuesRouter.post('/', async (req: Request, res: Response) => {
           });
         }
         
-        const insertRes = await tx.insert(issued_books).values(insertions).returning();
+        const insertRes = await db.insert(issued_books).values(insertions).returning();
 
-        await tx.update(books)
+        await db.update(books)
             .set({ available_copies: book.available_copies - numCopies })
             .where(eq(books.id, bId));
         
         return insertRes;
-    });
+    })();
 
     res.status(201).json({
       id: newIssues[0].id,
@@ -227,17 +227,17 @@ issuesRouter.post('/:issueId', async (req: Request, res: Response) => {
         banUntilDate = retDate.toISOString().split("T")[0];
       }
 
-      await db.transaction(async (tx) => {
-          await tx.update(issued_books)
+      await (async () => {
+          await db.update(issued_books)
             .set({ status: 'returned', return_date: today, fine_amount: 0 })
             .where(eq(issued_books.id, issueId));
           
           if (book) {
-              await tx.update(books)
+              await db.update(books)
                 .set({ available_copies: Math.min(book.total_copies, book.available_copies + 1) })
                 .where(eq(books.id, book.id));
           }
-      });
+      })();
 
       if (isLate) {
         res.json({
