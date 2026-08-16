@@ -227,7 +227,12 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
 
       {/* Table */}
       <div className="bg-white border border-blue-200 rounded-2xl overflow-hidden shadow-xs">
-        {filteredStudents.length === 0 ? (
+        {loading ? (
+          <div className="p-12 text-center flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-xs font-semibold text-slate-500 animate-pulse">Fetching student records...</p>
+          </div>
+        ) : filteredStudents.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-xs">
             No students found matching "{searchFilter}".
           </div>

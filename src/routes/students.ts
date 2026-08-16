@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
-import { students, issued_books } from '../db/schema';
+import { students, issued_books, books } from '../db/schema';
 import { eq, and, ne } from 'drizzle-orm';
 import { getStudentRestrictionStatus } from '../db/utils';
 
@@ -31,24 +31,59 @@ studentsRouter.get('/search', async (req: Request, res: Response) => {
       allStudents = allStudents.filter(s => String(s.library_card_no || '').toLowerCase().includes(qCard));
     }
 
-    const results = [];
-    for (const s of allStudents) {
-      const restriction = await getStudentRestrictionStatus(Number(s.id));
-      const activeIssues = await db.query.issued_books.findMany({
-        where: (issued_books, { and, eq, ne }) => and(
-          eq(issued_books.student_id, Number(s.id)),
-          ne(issued_books.status, 'returned')
-        )
-      });
-      results.push({
-        ...s,
-        password: s.password_hash,
-        is_restricted: restriction.isRestricted,
-        restriction_reason: restriction.reason,
-        restriction_until: restriction.untilDate,
-        active_issues_count: activeIssues.length
-      });
-    }
+    const allIssuedBooks = await db.query.issued_books.findMany();
+    const allBooks = await db.select({ id: books.id, title: books.title }).from(books);
+    
+    const booksMap = new Map();
+    allBooks.forEach(b => booksMap.set(b.id, b.title));
+    
+    const issuedByStudent = new Map();
+    allIssuedBooks.forEach(ib => {
+        if (!issuedByStudent.has(ib.student_id)) issuedByStudent.set(ib.student_id, []);
+        issuedByStudent.get(ib.student_id).push(ib);
+    });
+
+    const d = new Date();
+    const today = d.toISOString().split("T")[0];
+
+    const results = allStudents.map(s => {
+        const studentIssues = issuedByStudent.get(s.id) || [];
+        const activeIssues = studentIssues.filter((ib: any) => ib.status !== 'returned');
+        const activeOverdue = activeIssues.find((ib: any) => ib.due_date && ib.due_date < today);
+        
+        let isRestricted = false;
+        let restrictionReason = null;
+        let restrictionUntil = null;
+        
+        if (activeOverdue) {
+            isRestricted = true;
+            restrictionReason = `Overdue item: ${booksMap.get(activeOverdue.book_id) || 'Book'} is past its due date.`;
+        } else {
+            const returnedLate = studentIssues.filter((ib: any) => ib.status === 'returned' && ib.return_date && ib.due_date && ib.return_date > ib.due_date);
+            if (returnedLate.length > 0) {
+                returnedLate.sort((a: any, b: any) => new Date(b.return_date).getTime() - new Date(a.return_date).getTime());
+                const mostRecentLate = returnedLate[0];
+                const returnD = new Date(mostRecentLate.return_date);
+                returnD.setDate(returnD.getDate() + 14);
+                const banUntilStr = returnD.toISOString().split("T")[0];
+                
+                if (today < banUntilStr) {
+                    isRestricted = true;
+                    restrictionReason = `Returned a book late on ${mostRecentLate.return_date}. 2-week borrowing ban in effect.`;
+                    restrictionUntil = banUntilStr;
+                }
+            }
+        }
+
+        return {
+            ...s,
+            password: s.password_hash,
+            is_restricted: isRestricted,
+            restriction_reason: restrictionReason,
+            restriction_until: restrictionUntil,
+            active_issues_count: activeIssues.length
+        };
+    });
 
     res.json(results);
   } catch (error: any) {
@@ -80,24 +115,59 @@ studentsRouter.get('/', async (req: Request, res: Response) => {
         return rollA - rollB;
     });
 
-    const studentsWithCounts = [];
-    for (const s of allStudents) {
-        const restriction = await getStudentRestrictionStatus(Number(s.id));
-        const activeIssues = await db.query.issued_books.findMany({
-            where: (issued_books, { and, eq, ne }) => and(
-                eq(issued_books.student_id, Number(s.id)),
-                ne(issued_books.status, 'returned')
-            )
-        });
-        studentsWithCounts.push({
+    const allIssuedBooks = await db.query.issued_books.findMany();
+    const allBooks = await db.select({ id: books.id, title: books.title }).from(books);
+    
+    const booksMap = new Map();
+    allBooks.forEach(b => booksMap.set(b.id, b.title));
+    
+    const issuedByStudent = new Map();
+    allIssuedBooks.forEach(ib => {
+        if (!issuedByStudent.has(ib.student_id)) issuedByStudent.set(ib.student_id, []);
+        issuedByStudent.get(ib.student_id).push(ib);
+    });
+
+    const d = new Date();
+    const today = d.toISOString().split("T")[0];
+
+    const studentsWithCounts = allStudents.map(s => {
+        const studentIssues = issuedByStudent.get(s.id) || [];
+        const activeIssues = studentIssues.filter((ib: any) => ib.status !== 'returned');
+        const activeOverdue = activeIssues.find((ib: any) => ib.due_date && ib.due_date < today);
+        
+        let isRestricted = false;
+        let restrictionReason = null;
+        let restrictionUntil = null;
+        
+        if (activeOverdue) {
+            isRestricted = true;
+            restrictionReason = `Overdue item: ${booksMap.get(activeOverdue.book_id) || 'Book'} is past its due date.`;
+        } else {
+            const returnedLate = studentIssues.filter((ib: any) => ib.status === 'returned' && ib.return_date && ib.due_date && ib.return_date > ib.due_date);
+            if (returnedLate.length > 0) {
+                returnedLate.sort((a: any, b: any) => new Date(b.return_date).getTime() - new Date(a.return_date).getTime());
+                const mostRecentLate = returnedLate[0];
+                const returnD = new Date(mostRecentLate.return_date);
+                returnD.setDate(returnD.getDate() + 14);
+                const banUntilStr = returnD.toISOString().split("T")[0];
+                
+                if (today < banUntilStr) {
+                    isRestricted = true;
+                    restrictionReason = `Returned a book late on ${mostRecentLate.return_date}. 2-week borrowing ban in effect.`;
+                    restrictionUntil = banUntilStr;
+                }
+            }
+        }
+
+        return {
             ...s,
             password: s.password_hash,
-            is_restricted: restriction.isRestricted,
-            restriction_reason: restriction.reason,
-            restriction_until: restriction.untilDate,
+            is_restricted: isRestricted,
+            restriction_reason: restrictionReason,
+            restriction_until: restrictionUntil,
             active_issues_count: activeIssues.length
-        });
-    }
+        };
+    });
 
     res.json(studentsWithCounts);
   } catch (error: any) {
