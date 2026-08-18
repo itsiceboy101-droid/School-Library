@@ -185,7 +185,10 @@ export const LibrariansManager: React.FC<LibrariansManagerProps> = ({ onSuccessT
       {/* List Table */}
       <div className="bg-white border border-blue-200 rounded-2xl overflow-hidden shadow-xs">
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-500">Loading staff records...</div>
+          <div className="p-12 text-center flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-xs font-semibold text-slate-500 animate-pulse">Fetching staff records...</p>
+          </div>
         ) : librarians.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-500">
             No librarian accounts found. Click "+ Add New Librarian" above to register staff.
@@ -372,21 +375,20 @@ export const LibrariansManager: React.FC<LibrariansManagerProps> = ({ onSuccessT
                   </button>
                 </div>
               </div>
-              {!editingLibrarian && (
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Assigned Staff Role
-                  </label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="librarian">Standard Librarian (Catalog & Issue Desk)</option>
-                    <option value="head_librarian">Head Librarian / Admin (Full Access & Staff Admin)</option>
-                  </select>
-                </div>
-              )}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Assigned Staff Role
+                </label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as any)}
+                  className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-slate-800 focus:outline-none focus:border-blue-500"
+                  disabled={editingLibrarian && (editingLibrarian.id === 1 || editingLibrarian.name === 'Teacher Access' || editingLibrarian.name === 'Teacher Access Pass' || editingLibrarian.name === 'Admin Access')}
+                >
+                  <option value="librarian">Standard Librarian (Catalog & Issue Desk)</option>
+                  <option value="head_librarian">Head Librarian / Admin (Full Access & Staff Admin)</option>
+                </select>
+              </div>
               
               <div className="pt-3 flex gap-3">
                 <button

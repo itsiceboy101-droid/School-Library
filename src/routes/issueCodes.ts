@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db/db';
-import { issue_codes, books } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { issue_codes, books, issued_books } from '../db/schema';
+import { eq, desc, and, ne } from 'drizzle-orm';
 
 export const issueCodesRouter = Router();
 
@@ -67,8 +67,35 @@ issueCodesRouter.post('/', async (req, res) => {
     // Delete existing issue codes for this book to replace them, or just insert new ones?
     // Let's delete existing first to prevent duplicates if they regenerate.
     await db.delete(issue_codes).where(eq(issue_codes.book_id, Number(book_id)));
+    
+    // Nullify existing issue codes for active issues of this book
+    await db.update(issued_books)
+        .set({ issue_code: null })
+        .where(
+            and(
+                eq(issued_books.book_id, Number(book_id)),
+                ne(issued_books.status, 'returned')
+            )
+        );
 
     const insertedList = await db.insert(issue_codes).values(insertions).returning();
+
+    // Map new codes to any active issued books
+    const activeIssues = await db.query.issued_books.findMany({
+      where: and(
+        eq(issued_books.book_id, Number(book_id)),
+        ne(issued_books.status, 'returned')
+      ),
+      orderBy: (issued_books, { asc }) => [asc(issued_books.id)]
+    });
+
+    for (let i = 0; i < activeIssues.length; i++) {
+      if (i < insertedList.length) {
+        await db.update(issued_books)
+          .set({ issue_code: insertedList[i].full_code })
+          .where(eq(issued_books.id, activeIssues[i].id));
+      }
+    }
 
     // Fetch joined book info for all inserted
     const results = await db.select({
@@ -125,6 +152,16 @@ issueCodesRouter.put('/:id', async (req, res) => {
       })
       .where(eq(issue_codes.id, Number(id)));
 
+    // Cascade update to issued_books
+    await db.update(issued_books)
+      .set({ issue_code: fullCode })
+      .where(
+        and(
+          eq(issued_books.book_id, existing.book_id),
+          eq(issued_books.issue_code, existing.full_code)
+        )
+      );
+
     const [updated] = await db.select({
       id: issue_codes.id,
       book_id: issue_codes.book_id,
@@ -150,6 +187,23 @@ issueCodesRouter.put('/:id', async (req, res) => {
 issueCodesRouter.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Check if the code was being used in an active issue, and nullify it
+    const codeToDelete = await db.query.issue_codes.findFirst({
+        where: eq(issue_codes.id, Number(id))
+    });
+    
+    if (codeToDelete) {
+        await db.update(issued_books)
+            .set({ issue_code: null })
+            .where(
+                and(
+                    eq(issued_books.book_id, codeToDelete.book_id),
+                    eq(issued_books.issue_code, codeToDelete.full_code)
+                )
+            );
+    }
+
     await db.delete(issue_codes).where(eq(issue_codes.id, Number(id)));
     res.json({ message: 'Issue code deleted successfully' });
   } catch (err: any) {

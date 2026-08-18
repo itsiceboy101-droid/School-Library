@@ -266,7 +266,12 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
       {/* Sub-Tab 1: Teachers Directory */}
       {activeSubTab === 'list' && (
         <div className="bg-white border border-blue-200 rounded-2xl shadow-xs overflow-hidden">
-          {teachers.length === 0 ? (
+          {loading ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+              <p className="text-xs font-semibold text-slate-500 animate-pulse">Fetching teacher records...</p>
+            </div>
+          ) : teachers.length === 0 ? (
             <div className="p-12 text-center text-slate-500 space-y-3">
               <School className="w-10 h-10 mx-auto text-blue-300" />
               <p className="text-sm font-semibold">No teachers registered yet</p>

@@ -14,6 +14,7 @@ librariansRouter.put('/:id', async (req: Request, res: Response) => {
         name: name || undefined,
         email: email || undefined,
         password_hash: password || undefined,
+        role: req.body.role || undefined,
       })
       .where(eq(librarians.id, id))
       .returning();

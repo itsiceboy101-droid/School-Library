@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Hash, Sparkles, BookOpen, Edit2, Trash2, Check, X, Search, RefreshCw, KeyRound, AlertCircle, ChevronDown } from 'lucide-react';
 import { Book, IssueCode } from '../../types';
 import { formatDate } from '../../utils/dateFormatter';
@@ -29,6 +29,21 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
 
   // Delete State
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // Custom Dropdown State
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [bookSearchText, setBookSearchText] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchInitialData();
@@ -126,7 +141,7 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
       created_at: bookCodes.length > 0 ? bookCodes[0].created_at : book.added_at,
       all_codes: bookCodes
     };
-  });
+  }).filter(g => g.all_codes.length > 0);
 
   const filteredGroups = groupedByBook.filter(g => {
     const q = searchQuery.toLowerCase().trim();
@@ -187,22 +202,80 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
 
         <form onSubmit={handleCreateCode} className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
           {/* Select Book */}
-          <div className="md:col-span-5">
+          <div className="md:col-span-5 relative" ref={dropdownRef}>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
               Select Book <span className="text-red-500">*</span>
             </label>
-            <select
-              value={selectedBookId}
-              onChange={(e) => setSelectedBookId(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:border-blue-500 shadow-2xs"
-            >
-              <option value="">-- Choose a book from catalog --</option>
-              {booksList.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.title} ({b.author}) — {b.available_copies} available
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="-- Choose or search a book --"
+                value={isDropdownOpen ? bookSearchText : (booksList.find(b => b.id.toString() === selectedBookId)?.title || '')}
+                onChange={(e) => {
+                  setBookSearchText(e.target.value);
+                  setIsDropdownOpen(true);
+                  if (e.target.value === '') setSelectedBookId('');
+                }}
+                onFocus={() => {
+                  setIsDropdownOpen(true);
+                  setBookSearchText('');
+                }}
+                className="w-full px-3.5 py-2.5 pr-16 bg-white border border-blue-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-2xs"
+              />
+              {selectedBookId && !isDropdownOpen && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedBookId('');
+                    setBookSearchText('');
+                  }}
+                  className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 p-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <div 
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </div>
+            </div>
+            
+            {isDropdownOpen && (
+              <div className="absolute z-50 mt-1 w-full bg-white border border-blue-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                <div 
+                  className="px-3.5 py-2.5 text-sm text-slate-600 hover:bg-sky-50 cursor-pointer italic"
+                  onClick={() => {
+                    setSelectedBookId('');
+                    setIsDropdownOpen(false);
+                    setBookSearchText('');
+                  }}
+                >
+                  -- Clear selection --
+                </div>
+                {booksList
+                  .filter(b => b.title.toLowerCase().includes(bookSearchText.toLowerCase()) || b.author.toLowerCase().includes(bookSearchText.toLowerCase()))
+                  .map(b => (
+                  <div 
+                    key={b.id} 
+                    onClick={() => {
+                      setSelectedBookId(b.id.toString());
+                      setIsDropdownOpen(false);
+                      setBookSearchText('');
+                    }}
+                    className={`px-3.5 py-2.5 text-sm cursor-pointer border-t border-slate-50 ${selectedBookId === b.id.toString() ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-800 hover:bg-sky-50'}`}
+                  >
+                    {b.title} <span className="text-xs text-slate-500 font-normal">({b.author})</span> <span className="text-xs font-mono ml-1 text-blue-600 bg-blue-100 px-1 rounded">{b.available_copies} left</span>
+                  </div>
+                ))}
+                {booksList.filter(b => b.title.toLowerCase().includes(bookSearchText.toLowerCase()) || b.author.toLowerCase().includes(bookSearchText.toLowerCase())).length === 0 && (
+                  <div className="px-3.5 py-4 text-center text-sm text-slate-500">
+                    No books found matching "{bookSearchText}"
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Enter First 2 Digits */}
@@ -281,6 +354,12 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
 
         {/* Table */}
         <div className="overflow-x-auto">
+          {loading ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+              <p className="text-xs font-semibold text-slate-500 animate-pulse">Fetching issue codes...</p>
+            </div>
+          ) : (
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-sky-50 text-slate-600 uppercase font-semibold text-[10px] tracking-wider border-b border-blue-200">
               <tr>
@@ -354,6 +433,7 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
               )}
             </tbody>
           </table>
+          )}
         </div>
       </div>
     </div>

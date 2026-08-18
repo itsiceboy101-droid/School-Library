@@ -21,11 +21,37 @@ reportsRouter.get('/summary', async (req: Request, res: Response) => {
       const allStudents = await db.query.students.findMany();
       const total_students = allStudents.length;
       
+      const allIssuedBooks = await db.query.issued_books.findMany();
+      
+      const issuedByStudent = new Map();
+      allIssuedBooks.forEach(ib => {
+          if (!issuedByStudent.has(ib.student_id)) issuedByStudent.set(ib.student_id, []);
+          issuedByStudent.get(ib.student_id).push(ib);
+      });
+
       let restricted_students_count = 0;
-      for (const s of allStudents) {
-          const status = await getStudentRestrictionStatus(Number(s.id));
-          if (status.isRestricted) restricted_students_count++;
-      }
+      allStudents.forEach(s => {
+          const studentIssues = issuedByStudent.get(s.id) || [];
+          const s_activeIssues = studentIssues.filter((ib: any) => ib.status !== 'returned');
+          const activeOverdue = s_activeIssues.find((ib: any) => ib.due_date && ib.due_date < today);
+          
+          if (activeOverdue) {
+              restricted_students_count++;
+          } else {
+              const returnedLate = studentIssues.filter((ib: any) => ib.status === 'returned' && ib.return_date && ib.due_date && ib.return_date > ib.due_date);
+              if (returnedLate.length > 0) {
+                  returnedLate.sort((a: any, b: any) => new Date(b.return_date).getTime() - new Date(a.return_date).getTime());
+                  const mostRecentLate = returnedLate[0];
+                  const returnD = new Date(mostRecentLate.return_date);
+                  returnD.setDate(returnD.getDate() + 14);
+                  const banUntilStr = returnD.toISOString().split("T")[0];
+                  
+                  if (today < banUntilStr) {
+                      restricted_students_count++;
+                  }
+              }
+          }
+      });
       
       res.json({
         total_books,
@@ -52,10 +78,19 @@ reportsRouter.get('/overdue', async (req: Request, res: Response) => {
             )
         });
 
+        const allStudents = await db.query.students.findMany();
+        const allBooks = await db.query.books.findMany();
+        
+        const studentsMap = new Map();
+        allStudents.forEach(s => studentsMap.set(s.id, s));
+        
+        const booksMap = new Map();
+        allBooks.forEach(b => booksMap.set(b.id, b));
+
         const overdueRecords = [];
         for (const ib of activeOverdue) {
-            const student = await db.query.students.findFirst({ where: eq(students.id, ib.student_id) });
-            const book = await db.query.books.findFirst({ where: eq(books.id, ib.book_id) });
+            const student = studentsMap.get(ib.student_id);
+            const book = booksMap.get(ib.book_id);
             
             const due = new Date(ib.due_date);
             const now = new Date(today);

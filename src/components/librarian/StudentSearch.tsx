@@ -154,10 +154,14 @@ export const StudentSearch: React.FC<StudentSearchProps> = ({ onQuickIssue }) =>
             <UserCheck className="w-4 h-4 text-emerald-600" />
             Search Results ({students.length})
           </h3>
-          {loading && <span className="text-xs text-blue-600 animate-pulse">Searching...</span>}
         </div>
 
-        {students.length === 0 ? (
+        {loading ? (
+          <div className="p-12 text-center flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-xs font-semibold text-slate-500 animate-pulse">Searching for student...</p>
+          </div>
+        ) : students.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-xs">
             <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-400" />
             {searched ? 'No students matched your search criteria.' : 'Enter search terms above.'}

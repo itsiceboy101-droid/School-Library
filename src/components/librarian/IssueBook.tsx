@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown, Search, Hash } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown, Search, Hash, X } from 'lucide-react';
 import { Student, Book, Teacher, IssueCode } from '../../types';
 import { formatDate } from '../../utils/dateFormatter';
 
@@ -51,6 +51,22 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
       console.error(err);
     }
   };
+
+  const studentDropdownRef = useRef<HTMLDivElement>(null);
+  const bookDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (studentDropdownRef.current && !studentDropdownRef.current.contains(event.target as Node)) {
+        setIsStudentOpen(false);
+      }
+      if (bookDropdownRef.current && !bookDropdownRef.current.contains(event.target as Node)) {
+        setIsBookOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -141,7 +157,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
               <UserCheck className="w-4 h-4 text-blue-600" />
               Search & Select Borrower (Student / Teacher)
             </label>
-            <div className="relative">
+            <div className="relative" ref={studentDropdownRef}>
               <div className="relative flex items-center">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 z-10" />
                 <input
@@ -155,9 +171,27 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                   }}
                   onFocus={() => setIsStudentOpen(true)}
                   placeholder="Type borrower name, username, or class..."
-                  className="w-full pl-10 pr-9 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
+                  className="w-full pl-10 pr-16 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
                 />
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                {(selectedStudentId || selectedTeacherId) && !isStudentOpen && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStudentId('');
+                      setSelectedTeacherId('');
+                      setStudentSearch('');
+                    }}
+                    className="absolute right-9 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 p-1 z-10"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <div 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 z-10"
+                  onClick={() => setIsStudentOpen(!isStudentOpen)}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
               
               {isStudentOpen && (
@@ -252,7 +286,7 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
               <BookOpen className="w-4 h-4 text-blue-600" />
               Search & Select Book
             </label>
-            <div className="relative">
+            <div className="relative" ref={bookDropdownRef}>
               <div className="relative flex items-center">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 z-10" />
                 <input
@@ -265,9 +299,26 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                   }}
                   onFocus={() => setIsBookOpen(true)}
                   placeholder="Type book title, author, category, or publisher..."
-                  className="w-full pl-10 pr-9 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
+                  className="w-full pl-10 pr-16 py-2.5 bg-white border border-blue-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium"
                 />
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                {selectedBookId && !isBookOpen && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedBookId('');
+                      setBookSearch('');
+                    }}
+                    className="absolute right-9 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 p-1 z-10"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <div 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 z-10"
+                  onClick={() => setIsBookOpen(!isBookOpen)}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
               
               {isBookOpen && (
