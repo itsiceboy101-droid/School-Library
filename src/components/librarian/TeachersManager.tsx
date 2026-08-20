@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Trash2, UserCheck, AlertCircle, Sparkles, Eye, EyeOff, School, CheckCircle2, RefreshCw, Pencil, Save, X } from 'lucide-react';
+import { UserPlus, Trash2, UserCheck, AlertCircle, Sparkles, Eye, EyeOff, School, CheckCircle2, RefreshCw, Pencil, Save, X, Loader2, Phone } from 'lucide-react';
 import { Teacher } from '../../types';
 
 interface TeachersManagerProps {
@@ -22,6 +22,7 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [assignedClass, setAssignedClass] = useState('');
@@ -36,6 +37,7 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
   const [editDivision, setEditDivision] = useState('');
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
 
@@ -84,6 +86,7 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
           name,
           username,
           email,
+          phone: phone.trim() || null,
           password,
           assigned_class: assignedClass || null,
           assigned_division: assignedClass ? assignedDivision : null,
@@ -99,6 +102,7 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
         setName('');
         setUsername('');
         setEmail('');
+        setPhone('');
         setPassword('');
         setAssignedClass('');
         fetchTeachers();
@@ -115,6 +119,7 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
     setEditingTeacher(t);
     setEditName(t.name);
     setEditEmail(t.email);
+    setEditPhone(t.phone || '');
     setEditUsername(t.username);
     setEditPassword(t.password || '');
     setEditClass(t.assigned_class || '');
@@ -131,6 +136,7 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
         body: JSON.stringify({
           name: editName,
           email: editEmail,
+          phone: editPhone.trim() || null,
           username: editUsername,
           password: editPassword,
           assigned_class: editClass || null,
@@ -298,13 +304,15 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
                     
                     return (
                       <tr key={t.id} className="hover:bg-blue-50/50 transition">
-                        <td className="px-6 py-4 font-bold text-slate-900 flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-extrabold text-sm border border-blue-200">
-                            {t.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div>{t.name}</div>
-                            <div className="text-[10px] text-slate-400 font-normal">Staff ID #{t.id}</div>
+                        <td className="px-6 py-4 font-bold text-slate-900">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center font-extrabold text-sm border border-blue-200">
+                              {t.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div>{t.name}</div>
+                              <div className="text-[10px] text-slate-400 font-normal">Staff ID #{t.id}</div>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 font-mono text-slate-700 font-bold">
@@ -581,8 +589,9 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-500/20 disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-500/20 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                 >
+                  {submitLoading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                   {submitLoading ? 'Registering...' : 'Register Teacher'}
                 </button>
               </div>
@@ -687,7 +696,7 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition"
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition inline-flex items-center gap-1.5"
               >
                 Update Teacher
               </button>

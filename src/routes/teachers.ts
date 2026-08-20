@@ -7,13 +7,14 @@ export const teachersRouter = Router();
 
 teachersRouter.put('/:id', async (req: Request, res: Response) => {
   const id = parseInt(req.params.id, 10);
-  const { name, email, username, password } = req.body;
+  const { name, email, username, password, phone } = req.body;
   try {
     const updated = await db.update(teachers)
       .set({
         name: name || undefined,
         email: email || undefined,
         username: username || undefined,
+        phone: phone !== undefined ? (phone ? String(phone).trim() : null) : undefined,
         password_hash: password || undefined,
       })
       .where(eq(teachers.id, id))
@@ -38,6 +39,7 @@ teachersRouter.get('/', async (req: Request, res: Response) => {
       name: t.name,
       email: t.email,
       username: t.username,
+      phone: t.phone,
       password: t.password_hash,
       assigned_class: t.assigned_class,
       assigned_division: t.assigned_division,
@@ -51,7 +53,7 @@ teachersRouter.get('/', async (req: Request, res: Response) => {
 
 // Create a new teacher
 teachersRouter.post('/', async (req: Request, res: Response) => {
-  const { name, email, username, password, assigned_class, assigned_division } = req.body;
+  const { name, email, username, password, assigned_class, assigned_division, phone } = req.body;
 
   if (!name || !email || !username || !password) {
     return res.status(400).json({ error: 'Name, email, username, and password are required' });
@@ -96,6 +98,7 @@ teachersRouter.post('/', async (req: Request, res: Response) => {
       name: name.trim(),
       email: email.trim(),
       username: username.trim(),
+      phone: phone ? String(phone).trim() : null,
       password_hash: password,
       assigned_class: assigned_class ? String(assigned_class) : null,
       assigned_division: assigned_division ? String(assigned_division).toUpperCase() : null,
@@ -108,9 +111,10 @@ teachersRouter.post('/', async (req: Request, res: Response) => {
         name: newTeacher.name,
         email: newTeacher.email,
         username: newTeacher.username,
+        phone: newTeacher.phone,
         assigned_class: newTeacher.assigned_class,
         assigned_division: newTeacher.assigned_division,
-      }
+      },
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

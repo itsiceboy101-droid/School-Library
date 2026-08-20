@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Trash2, Shield, UserCheck, AlertCircle, Sparkles, Key, Mail, CheckCircle2, Eye, EyeOff, Pencil, Save, X } from 'lucide-react';
+import { UserPlus, Trash2, Shield, UserCheck, AlertCircle, Sparkles, Key, Mail, CheckCircle2, Eye, EyeOff, Pencil, Save, X, Loader2 } from 'lucide-react';
 import { LibrarianAccount } from '../../types';
 
 interface LibrariansManagerProps {
@@ -401,8 +401,9 @@ export const LibrariansManager: React.FC<LibrariansManagerProps> = ({ onSuccessT
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-500/20 disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-500/20 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                 >
+                  {saving && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                   {saving ? 'Saving...' : (editingLibrarian ? 'Update Account' : 'Create Account')}
                 </button>
               </div>

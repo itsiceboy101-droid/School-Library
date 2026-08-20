@@ -20,6 +20,7 @@ export interface Teacher {
   name: string;
   email: string;
   username: string;
+  phone?: string | null;
   assigned_class?: string | null;
   assigned_division?: string | null;
   created_at?: string;
@@ -32,6 +33,8 @@ export interface Student {
   division: string;
   roll_no: string;
   library_card_no: string;
+  email?: string | null;
+  phone?: string | null;
   password?: string;
   created_at?: string;
   is_restricted?: boolean;
@@ -56,12 +59,18 @@ export interface Book {
 export interface IssuedBook {
   id: number;
   book_id: number;
-  student_id: number;
+  student_id?: number | null;
+  teacher_id?: number | null;
   student_name: string;
   student_card_no?: string;
   student_class?: string;
   student_division?: string;
   student_roll_no?: string;
+  email?: string | null;
+  student_email?: string | null;
+  teacher_email?: string | null;
+  student_phone?: string | null;
+  teacher_phone?: string | null;
   book_title: string;
   book_author?: string;
   issue_date: string;
@@ -73,6 +82,27 @@ export interface IssuedBook {
   issue_code?: string | null;
   is_restricted?: boolean;
   restriction_note?: string;
+}
+
+export interface OverdueItem {
+  id: number;
+  student_id?: number | null;
+  teacher_id?: number | null;
+  student_name: string;
+  student_card_no: string;
+  student_class: string;
+  student_roll: string;
+  email?: string | null;
+  student_email?: string | null;
+  teacher_email?: string | null;
+  student_phone?: string | null;
+  book_title: string;
+  book_author: string;
+  issue_date: string;
+  due_date: string;
+  days_overdue: number;
+  fine_amount: number;
+  restriction_status: string;
 }
 
 export interface ReportSummary {

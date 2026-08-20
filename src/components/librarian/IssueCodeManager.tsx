@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Hash, Sparkles, BookOpen, Edit2, Trash2, Check, X, Search, RefreshCw, KeyRound, AlertCircle, ChevronDown } from 'lucide-react';
+import { Hash, Sparkles, BookOpen, Edit2, Trash2, Check, X, Search, RefreshCw, KeyRound, AlertCircle, ChevronDown, Loader2 } from 'lucide-react';
 import { Book, IssueCode } from '../../types';
 import { formatDate } from '../../utils/dateFormatter';
 
@@ -321,8 +321,9 @@ export const IssueCodeManager: React.FC<IssueCodeManagerProps> = ({ onSuccessToa
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition disabled:opacity-50 shrink-0"
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition disabled:opacity-50 shrink-0 inline-flex items-center gap-1.5"
             >
+              {submitting && <Loader2 className="w-4 h-4 animate-spin text-white" />}
               {submitting ? 'Generating...' : 'Generate Code'}
             </button>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown, Search, Hash, X } from 'lucide-react';
+import { BookPlus, Calendar, UserCheck, BookOpen, AlertCircle, CheckCircle, ChevronDown, Search, Hash, X, Loader2 } from 'lucide-react';
 import { Student, Book, Teacher, IssueCode } from '../../types';
 import { formatDate } from '../../utils/dateFormatter';
 
@@ -255,8 +255,13 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
             </div>
             {selectedStudent && (
               <div className="mt-2 space-y-2">
-                <div className="p-2.5 rounded-lg bg-sky-50 border border-blue-200 text-xs text-slate-700 flex items-center justify-between">
-                  <span>Selected: <strong className="text-slate-900">{selectedStudent.name}</strong></span>
+                <div className="p-2.5 rounded-lg bg-sky-50 border border-blue-200 text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div>
+                    <span>Selected: <strong className="text-slate-900">{selectedStudent.name}</strong></span>
+                    {selectedStudent.email && (
+                      <span className="text-[11px] text-blue-700 ml-2 font-mono">({selectedStudent.email})</span>
+                    )}
+                  </div>
                   <span className="font-mono text-blue-700 font-semibold">{selectedStudent.library_card_no}</span>
                 </div>
                 {selectedStudent.is_restricted ? (
@@ -276,6 +281,17 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
                     Eligible to Borrow Books
                   </div>
                 )}
+              </div>
+            )}
+            {selectedTeacher && (
+              <div className="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <div>
+                  <span>Selected Teacher: <strong className="text-slate-900">{selectedTeacher.name}</strong></span>
+                  {selectedTeacher.email && (
+                    <span className="text-[11px] text-amber-800 ml-2 font-mono">({selectedTeacher.email})</span>
+                  )}
+                </div>
+                <span className="font-mono text-amber-800 font-semibold">{selectedTeacher.username}</span>
               </div>
             )}
           </div>
@@ -488,8 +504,12 @@ export const IssueBook: React.FC<IssueBookProps> = ({ preselectedStudent, onSucc
             disabled={loading || (selectedBook && selectedBook.available_copies < 1) || Boolean(selectedStudent && selectedStudent.is_restricted)}
             className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <BookPlus className="w-4 h-4" />
-            {loading ? 'Processing Issue...' : 'Confirm Book Issue'}
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            ) : (
+              <BookPlus className="w-4 h-4" />
+            )}
+            {loading ? 'Processing Book Issue...' : 'Confirm Book Issue'}
           </button>
         </form>
       </div>

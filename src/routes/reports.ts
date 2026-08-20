@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db/db';
-import { students, books, issued_books } from '../db/schema';
-import { eq, ne, lt, and } from 'drizzle-orm';
-import { getTodayStr, getStudentRestrictionStatus } from '../db/utils';
+import { students, books, issued_books, teachers } from '../db/schema';
+import { eq, ne } from 'drizzle-orm';
+import { getTodayStr } from '../db/utils';
 
 export const reportsRouter = Router();
 
@@ -16,7 +16,7 @@ reportsRouter.get('/summary', async (req: Request, res: Response) => {
       
       const activeIssues = await db.query.issued_books.findMany({ where: ne(issued_books.status, 'returned') });
       const issued = activeIssues.length;
-      const overdue = activeIssues.filter(ib => ib.due_date < today).length;
+      const overdue = activeIssues.filter(ib => (ib.due_date && ib.due_date < today) || ib.status === 'overdue').length;
       
       const allStudents = await db.query.students.findMany();
       const total_students = allStudents.length;
@@ -25,15 +25,17 @@ reportsRouter.get('/summary', async (req: Request, res: Response) => {
       
       const issuedByStudent = new Map();
       allIssuedBooks.forEach(ib => {
-          if (!issuedByStudent.has(ib.student_id)) issuedByStudent.set(ib.student_id, []);
-          issuedByStudent.get(ib.student_id).push(ib);
+          if (ib.student_id) {
+            if (!issuedByStudent.has(ib.student_id)) issuedByStudent.set(ib.student_id, []);
+            issuedByStudent.get(ib.student_id).push(ib);
+          }
       });
 
       let restricted_students_count = 0;
       allStudents.forEach(s => {
           const studentIssues = issuedByStudent.get(s.id) || [];
           const s_activeIssues = studentIssues.filter((ib: any) => ib.status !== 'returned');
-          const activeOverdue = s_activeIssues.find((ib: any) => ib.due_date && ib.due_date < today);
+          const activeOverdue = s_activeIssues.find((ib: any) => (ib.due_date && ib.due_date < today) || ib.status === 'overdue');
           
           if (activeOverdue) {
               restricted_students_count++;
@@ -71,39 +73,79 @@ reportsRouter.get('/summary', async (req: Request, res: Response) => {
 reportsRouter.get('/overdue', async (req: Request, res: Response) => {
     try {
         const today = getTodayStr();
-        const activeOverdue = await db.query.issued_books.findMany({
-            where: and(
-                ne(issued_books.status, 'returned'),
-                lt(issued_books.due_date, today)
-            )
+        const activeIssues = await db.query.issued_books.findMany({
+            where: ne(issued_books.status, 'returned')
         });
 
+        const activeOverdue = activeIssues.filter(ib => (ib.due_date && ib.due_date < today) || ib.status === 'overdue');
+
         const allStudents = await db.query.students.findMany();
+        const allTeachers = await db.query.teachers.findMany();
         const allBooks = await db.query.books.findMany();
         
         const studentsMap = new Map();
         allStudents.forEach(s => studentsMap.set(s.id, s));
+
+        const teachersMap = new Map();
+        allTeachers.forEach(t => teachersMap.set(t.id, t));
         
         const booksMap = new Map();
         allBooks.forEach(b => booksMap.set(b.id, b));
 
         const overdueRecords = [];
         for (const ib of activeOverdue) {
-            const student = studentsMap.get(ib.student_id);
+            let studentName = "Unknown";
+            let studentCard = "";
+            let studentClass = "";
+            let studentRoll = "";
+
+            let studentEmail: string | null = null;
+            let teacherEmail: string | null = null;
+            let studentPhone: string | null = null;
+            let teacherPhone: string | null = null;
+
+            if (ib.teacher_id) {
+                const teacher = teachersMap.get(ib.teacher_id);
+                if (teacher) {
+                    studentName = teacher.name + " (Teacher)";
+                    studentCard = teacher.username;
+                    studentClass = teacher.assigned_class ? teacher.assigned_class : "Subject Teacher";
+                    teacherEmail = teacher.email || null;
+                    teacherPhone = teacher.phone || null;
+                }
+            } else if (ib.student_id) {
+                const student = studentsMap.get(ib.student_id);
+                if (student) {
+                    studentName = student.name;
+                    studentCard = student.library_card_no;
+                    studentClass = student.class ? `${student.class}${student.division ? `-${student.division}` : ''}` : "";
+                    studentRoll = student.roll_no || "";
+                    studentEmail = student.email || null;
+                    studentPhone = student.phone || null;
+                }
+            }
+
             const book = booksMap.get(ib.book_id);
             
             const due = new Date(ib.due_date);
             const now = new Date(today);
-            const diffTime = Math.abs(now.getTime() - due.getTime());
-            const days_overdue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffTime = now.getTime() - due.getTime();
+            const days_overdue = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
             
             overdueRecords.push({
                 id: ib.id,
+                book_id: ib.book_id,
                 student_id: ib.student_id,
-                student_name: student ? student.name : "Unknown",
-                student_card_no: student ? student.library_card_no : "",
-                student_class: student ? `${student.class}-${student.division}` : "",
-                student_roll: student ? student.roll_no : "",
+                teacher_id: ib.teacher_id,
+                student_name: studentName,
+                student_card_no: studentCard,
+                student_class: studentClass,
+                student_roll: studentRoll,
+                email: teacherEmail || studentEmail || null,
+                student_email: studentEmail,
+                teacher_email: teacherEmail,
+                student_phone: studentPhone,
+                teacher_phone: teacherPhone,
                 book_title: book ? book.title : "Unknown",
                 book_author: book ? book.author : "",
                 issue_date: ib.issue_date,
@@ -111,6 +153,7 @@ reportsRouter.get('/overdue', async (req: Request, res: Response) => {
                 days_overdue,
                 fine_amount: 0,
                 restriction_status: "2-Week Borrowing Ban Pending Return",
+                issue_code: ib.issue_code,
             });
         }
         

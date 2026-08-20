@@ -176,7 +176,7 @@ studentsRouter.get('/', async (req: Request, res: Response) => {
 });
 
 studentsRouter.post('/', async (req: Request, res: Response) => {
-  const { name, class: cls, division, roll_no, password, library_card_no } = req.body;
+  const { name, class: cls, division, roll_no, password, library_card_no, email, phone } = req.body;
   if (!name || !cls || !division || !roll_no || !password || !library_card_no) {
     return res.status(400).json({ error: 'All student fields are required' });
   }
@@ -198,6 +198,8 @@ studentsRouter.post('/', async (req: Request, res: Response) => {
       roll_no: String(roll_no).trim(),
       password_hash: password.trim(),
       library_card_no: String(library_card_no).trim(),
+      email: email ? String(email).trim() : null,
+      phone: phone ? String(phone).trim() : null,
     }).returning();
 
     res.status(201).json({
@@ -211,7 +213,7 @@ studentsRouter.post('/', async (req: Request, res: Response) => {
 
 studentsRouter.put('/:id', async (req: Request, res: Response) => {
     const studentId = parseInt(req.params.id, 10);
-    const { name, class: cls, division, roll_no, password, library_card_no } = req.body;
+    const { name, class: cls, division, roll_no, password, library_card_no, email, phone } = req.body;
     try {
         if (library_card_no) {
             const existingUsername = await db.query.students.findFirst({
@@ -230,6 +232,8 @@ studentsRouter.put('/:id', async (req: Request, res: Response) => {
             class: cls ? String(cls).trim() : undefined,
             division: division ? String(division).trim() : undefined,
             roll_no: roll_no ? String(roll_no).trim() : undefined,
+            email: email !== undefined ? (email ? String(email).trim() : null) : undefined,
+            phone: phone !== undefined ? (phone ? String(phone).trim() : null) : undefined,
             ...(library_card_no ? { library_card_no: String(library_card_no).trim() } : {}),
             ...(password ? { password_hash: password.trim() } : {})
         }).where(eq(students.id, studentId)).returning();

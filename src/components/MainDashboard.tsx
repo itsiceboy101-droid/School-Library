@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, ShieldCheck, Users, BookOpen, ArrowLeftRight, UserPlus, Sparkles, School, KeyRound } from 'lucide-react';
+import { BarChart3, ShieldCheck, Users, BookOpen, ArrowLeftRight, UserPlus, Sparkles, School, KeyRound, Mail } from 'lucide-react';
 import { User as LibrarianUser, Student } from '../types';
 import { ReportsManager } from './librarian/ReportsManager';
 import { LibrariansManager } from './librarian/LibrariansManager';
@@ -9,6 +9,7 @@ import { BooksManager } from './librarian/BooksManager';
 import { IssueBook } from './librarian/IssueBook';
 import { ReturnBook } from './librarian/ReturnBook';
 import { IssueCodeManager } from './librarian/IssueCodeManager';
+import { DirectEmailModal } from './common/DirectEmailModal';
 
 interface MainDashboardProps {
   user: LibrarianUser;
@@ -21,6 +22,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
   const [activeTab, setActiveTab] = useState<MainTab>('analytics');
   const [openAddLibrarian, setOpenAddLibrarian] = useState(false);
   const [openAddStudent, setOpenAddStudent] = useState(false);
+  const [openEmailModal, setOpenEmailModal] = useState(false);
   const [deskSubTab, setDeskSubTab] = useState<'issue' | 'return' | 'issue-codes'>('issue');
 
   const handleAddTeacherClick = () => {
@@ -71,8 +73,17 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
         {/* Quick Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
+            onClick={() => setOpenEmailModal(true)}
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition flex items-center gap-2"
+            title="Auto-Send Gmail notifications in background"
+          >
+            <Mail className="w-4 h-4" />
+            Auto-Email (Gmail)
+          </button>
+
+          <button
             onClick={handleAddTeacherClick}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-500/20 transition flex items-center gap-2"
+            className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-md shadow-teal-500/20 transition flex items-center gap-2"
           >
             <School className="w-4 h-4" />
             + Add Teacher
@@ -186,6 +197,11 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
           </div>
         )}
       </div>
+
+      <DirectEmailModal
+        isOpen={openEmailModal}
+        onClose={() => setOpenEmailModal(false)}
+      />
     </div>
   );
 };

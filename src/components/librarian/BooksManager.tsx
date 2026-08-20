@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, PlusCircle, Trash2, Search, CheckCircle, AlertCircle, X, Layers, Hash } from 'lucide-react';
+import { BookOpen, PlusCircle, Trash2, Search, CheckCircle, AlertCircle, X, Layers, Hash, Loader2 } from 'lucide-react';
 import { Book, IssueCode } from '../../types';
 
 interface BooksManagerProps {
@@ -515,8 +515,9 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
+                  {saving && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                   {saving ? 'Saving...' : editingBook ? 'Save Changes' : 'Add Book to Catalog'}
                 </button>
               </div>

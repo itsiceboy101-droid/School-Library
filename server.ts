@@ -11,6 +11,7 @@ import { reportsRouter } from "./src/routes/reports";
 import { studentPortalRouter } from "./src/routes/studentPortal";
 import { teachersRouter } from "./src/routes/teachers";
 import { issueCodesRouter } from "./src/routes/issueCodes";
+import { notificationsRouter } from "./src/routes/notifications";
 
 const app = express();
 const PORT = 3000;
@@ -37,6 +38,7 @@ app.use('/api/issued-books', issuesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/student', studentPortalRouter);
 app.use('/api/issue-codes', issueCodesRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // Database seeding - ensures master librarian exists
 

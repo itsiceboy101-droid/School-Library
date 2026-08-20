@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, GraduationCap, Lock, Mail, CreditCard, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Shield, GraduationCap, Lock, Mail, CreditCard, AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 interface LoginModalProps {
   initialRole?: 'librarian' | 'student';
@@ -203,6 +203,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   : 'bg-sky-600 hover:bg-sky-700 shadow-sky-500/20'
               } ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
+              {loading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
               {loading
                 ? 'Authenticating...'
                 : platform === 'librarian'

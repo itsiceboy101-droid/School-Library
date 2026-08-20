@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { School, UserPlus, Users, Search, AlertCircle, BookOpen, Key, Eye, EyeOff, ShieldAlert, CheckCircle2, RefreshCw, Pencil, Trash2, X } from 'lucide-react';
+import { School, UserPlus, Users, Search, AlertCircle, BookOpen, Key, Eye, EyeOff, ShieldAlert, CheckCircle2, RefreshCw, Pencil, Trash2, X, Loader2 } from 'lucide-react';
 import { Teacher, Student } from '../types';
 import { CatalogSearch } from './student/CatalogSearch';
 import { BookMarked, History } from 'lucide-react';
@@ -340,7 +340,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
 
               {/* Student Table */}
               <div className="bg-white border border-blue-200 rounded-2xl shadow-xs overflow-hidden">
-                {filteredStudents.length === 0 ? (
+                {loading ? (
+                  <div className="p-12 text-center flex flex-col items-center justify-center">
+                    <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+                    <p className="text-xs font-semibold text-slate-500 animate-pulse">Fetching class student roster...</p>
+                  </div>
+                ) : filteredStudents.length === 0 ? (
                   <div className="p-12 text-center text-slate-500 space-y-2">
                     <Users className="w-8 h-8 mx-auto text-blue-300" />
                     <p className="text-sm font-semibold">No students found in Class {teacher.assigned_class}-{teacher.assigned_division}</p>
@@ -436,7 +441,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
       )}
       {activeTab === 'myBooks' && (
         <div className="bg-white border border-blue-200 rounded-2xl shadow-xs overflow-hidden">
-          {borrowedBooks.filter(b => b.status !== 'returned').length === 0 ? (
+          {loading ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+              <p className="text-xs font-semibold text-slate-500 animate-pulse">Loading your borrowed books...</p>
+            </div>
+          ) : borrowedBooks.filter(b => b.status !== 'returned').length === 0 ? (
             <div className="p-12 text-center text-slate-500 shadow-sm">
               <BookMarked className="w-12 h-12 mx-auto text-blue-200 mb-4" />
               <p className="font-semibold">No books currently borrowed.</p>
@@ -483,7 +493,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
       )}
       {activeTab === 'history' && (
         <div className="bg-white border border-blue-200 rounded-2xl shadow-xs overflow-hidden">
-          {borrowedBooks.filter(b => b.status === 'returned').length === 0 ? (
+          {loading ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+              <p className="text-xs font-semibold text-slate-500 animate-pulse">Loading borrowing history...</p>
+            </div>
+          ) : borrowedBooks.filter(b => b.status === 'returned').length === 0 ? (
             <div className="p-12 text-center text-slate-500 shadow-sm">
               <History className="w-12 h-12 mx-auto text-blue-200 mb-4" />
               <p className="font-semibold">No borrowing history available.</p>
@@ -635,8 +650,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, onS
                 <button
                   type="submit"
                   disabled={addLoading}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-500/20 disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md shadow-blue-500/20 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                 >
+                  {addLoading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                   {addLoading ? 'Saving...' : (editingStudent ? 'Save Changes' : 'Add Student')}
                 </button>
               </div>

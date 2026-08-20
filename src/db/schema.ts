@@ -22,6 +22,8 @@ export const students = pgTable('students', {
   division: text('division').notNull(),
   roll_no: text('roll_no').notNull(),
   library_card_no: text('library_card_no').notNull(),
+  email: text('email'),
+  phone: text('phone'),
   password_hash: text('password_hash').notNull(),
   created_at: timestamp('created_at').defaultNow(),
 });
@@ -56,6 +58,7 @@ export const teachers = pgTable('teachers', {
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   username: text('username').notNull().unique(),
+  phone: text('phone'),
   password_hash: text('password_hash').notNull(),
   assigned_class: text('assigned_class'),
   assigned_division: text('assigned_division'),

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Award, AlertCircle, ShieldCheck, Clock, ShieldAlert, CheckCircle2, Info } from 'lucide-react';
+import { Award, AlertCircle, ShieldCheck, Clock, ShieldAlert, CheckCircle2, Info, Loader2 } from 'lucide-react';
 import { Student } from '../../types';
 
 interface StudentFinesProps {
@@ -13,8 +13,10 @@ export const StudentFines: React.FC<StudentFinesProps> = ({ student }) => {
     until_date: string | null;
     policy_note?: string;
   } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchStatus = async () => {
+    setLoading(true);
     try {
       const res = await fetch(`/api/student/${student.id}/fines`);
       if (res.ok) {
@@ -23,6 +25,8 @@ export const StudentFines: React.FC<StudentFinesProps> = ({ student }) => {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,6 +35,17 @@ export const StudentFines: React.FC<StudentFinesProps> = ({ student }) => {
   }, [student.id]);
 
   const isRestricted = restriction ? restriction.is_restricted : false;
+
+  if (loading) {
+    return (
+      <div className="max-w-xl mx-auto space-y-6">
+        <div className="bg-white border border-blue-200 rounded-2xl p-12 shadow-xs text-center flex flex-col items-center justify-center">
+          <Loader2 className="w-8 h-8 border-t-transparent animate-spin text-blue-600 mb-3" />
+          <p className="text-xs font-semibold text-slate-500 animate-pulse">Checking account standing & restrictions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl mx-auto space-y-6">

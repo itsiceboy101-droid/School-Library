@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Trash2, Search, CreditCard, Lock, AlertCircle, X, Pencil, Eye, EyeOff } from 'lucide-react';
+import { Users, UserPlus, Trash2, Search, CreditCard, Lock, AlertCircle, X, Pencil, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import { Student } from '../../types';
 
 interface StudentsManagerProps {
@@ -24,6 +24,14 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
   const [visiblePasswords, setVisiblePasswords] = useState<{ [key: number]: boolean }>({});
   const [showModalPassword, setShowModalPassword] = useState(false);
 
+  const [name, setName] = useState('');
+  const [cls, setCls] = useState('');
+  const [division, setDivision] = useState('');
+  const [rollNo, setRollNo] = useState('');
+  const [cardNo, setCardNo] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+
   useEffect(() => {
     if (openAddModalInitially) {
       setEditingStudent(null);
@@ -33,16 +41,10 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
       setRollNo('');
       setCardNo('');
       setPassword('');
+      setEmail('');
       setIsModalOpen(true);
     }
   }, [openAddModalInitially]);
-
-  const [name, setName] = useState('');
-  const [cls, setCls] = useState('');
-  const [division, setDivision] = useState('');
-  const [rollNo, setRollNo] = useState('');
-  const [cardNo, setCardNo] = useState('');
-  const [password, setPassword] = useState('');
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +76,7 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
     setRollNo('');
     setCardNo('');
     setPassword('');
+    setEmail('');
     setError(null);
     setIsModalOpen(true);
   };
@@ -86,6 +89,7 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
     setRollNo(student.roll_no);
     setCardNo(student.library_card_no);
     setPassword(student.password || '');
+    setEmail(student.email || '');
     setError(null);
     setIsModalOpen(true);
   };
@@ -119,6 +123,7 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
           roll_no: rollNo.trim(),
           library_card_no: cardNo.trim(),
           password: password.trim(),
+          email: email ? email.trim() : null,
         }),
       });
 
@@ -134,6 +139,7 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
         setRollNo('');
         setCardNo('');
         setPassword('');
+        setEmail('');
         setEditingStudent(null);
         fetchStudents();
       }
@@ -254,11 +260,26 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                   const isPassShown = !!visiblePasswords[s.id];
                   return (
                     <tr key={s.id} className="hover:bg-blue-50/50 transition">
-                      <td className="px-6 py-3.5 font-bold text-slate-900 flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-xs shrink-0">
-                          {s.name.charAt(0)}
+                      <td className="px-6 py-3.5 font-bold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-xs shrink-0">
+                            {s.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div>{s.name}</div>
+                            {s.email ? (
+                              <div className="text-[11px] font-mono text-blue-700 flex items-center gap-1 font-normal mt-0.5">
+                                <Mail className="w-3 h-3 text-blue-600 shrink-0" />
+                                {s.email}
+                              </div>
+                            ) : (
+                              <div className="text-[10px] text-slate-400 italic flex items-center gap-1 mt-0.5">
+                                <Mail className="w-3 h-3 text-slate-300 shrink-0" />
+                                No email
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        {s.name}
                       </td>
                       <td className="px-6 py-3.5">
                         <span className="font-mono bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded text-xs font-semibold">
@@ -461,6 +482,23 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                 </div>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Email Address</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Optional (for receipts & overdue notices)</span>
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="e.g. student@school.com or parent@gmail.com"
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-500 font-sans"
+                  />
+                </div>
+              </div>
+
               <div className="pt-2 flex items-center justify-end gap-3">
                 <button
                   type="button"
@@ -472,8 +510,9 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
+                  {saving && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                   {saving ? 'Saving...' : editingStudent ? 'Update Student' : 'Register Student'}
                 </button>
               </div>

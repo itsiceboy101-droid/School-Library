@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowDownLeft, AlertTriangle, Clock, RefreshCw, CheckCircle2, DollarSign, Layers, Search } from 'lucide-react';
+import { ArrowDownLeft, AlertTriangle, Clock, RefreshCw, CheckCircle2, DollarSign, Layers, Search, Loader2 } from 'lucide-react';
 import { IssuedBook } from '../../types';
 import { formatDate } from '../../utils/dateFormatter';
 
@@ -155,7 +155,12 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
       </div>
 
       <div className="bg-white border border-blue-200 rounded-2xl overflow-hidden shadow-xs">
-        {groupedIssuedList.length === 0 ? (
+        {loading ? (
+          <div className="p-12 text-center flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-xs font-semibold text-slate-500 animate-pulse">Loading active borrowings & issued books...</p>
+          </div>
+        ) : groupedIssuedList.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-xs">
             <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500" />
             All issued books have been returned! No active borrowings.
@@ -182,6 +187,7 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                   const selectedQty = (isTeacherWithMultiple && returnQtyMap[item.id] !== undefined)
                     ? returnQtyMap[item.id]
                     : item.copies;
+                  const isThisReturning = returningId === item.copy_ids[0];
 
                   return (
                     <tr key={item.id} className="hover:bg-blue-50/50 transition">
@@ -271,7 +277,8 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                               <select
                                 value={selectedQty}
                                 onChange={(e) => setReturnQtyMap(prev => ({ ...prev, [item.id]: parseInt(e.target.value, 10) }))}
-                                className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-2 py-1.5 focus:outline-none border-r border-blue-500 cursor-pointer"
+                                disabled={returningId !== null}
+                                className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-2 py-1.5 focus:outline-none border-r border-blue-500 cursor-pointer disabled:opacity-50"
                               >
                                 {Array.from({ length: item.copies }, (_, i) => i + 1).map((num) => (
                                   <option key={num} value={num} className="bg-white text-slate-800 font-medium">
@@ -281,21 +288,29 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                               </select>
                               <button
                                 onClick={() => handleReturn(item)}
-                                disabled={returningId === item.copy_ids[0]}
+                                disabled={returningId !== null}
                                 className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800/60 transition disabled:opacity-50"
                               >
-                                <ArrowDownLeft className="w-3.5 h-3.5" />
-                                {returningId === item.copy_ids[0] ? '...' : 'Return'}
+                                {isThisReturning ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                                ) : (
+                                  <ArrowDownLeft className="w-3.5 h-3.5" />
+                                )}
+                                {isThisReturning ? 'Returning...' : 'Return'}
                               </button>
                             </div>
                           ) : (
                             <button
                               onClick={() => handleReturn(item)}
-                              disabled={returningId === item.copy_ids[0]}
+                              disabled={returningId !== null}
                               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 transition disabled:opacity-50"
                             >
-                              <ArrowDownLeft className="w-3.5 h-3.5" />
-                              {returningId === item.copy_ids[0] ? 'Processing...' : 'Return'}
+                              {isThisReturning ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                              ) : (
+                                <ArrowDownLeft className="w-3.5 h-3.5" />
+                              )}
+                              {isThisReturning ? 'Processing Return...' : 'Return'}
                             </button>
                           )}
                         </div>
@@ -335,8 +350,9 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
               <button
                 onClick={handleSaveEdit}
                 disabled={savingEdit}
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition disabled:opacity-50"
               >
+                {savingEdit && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                 {savingEdit ? 'Saving...' : 'Save Changes'}
               </button>
             </div>

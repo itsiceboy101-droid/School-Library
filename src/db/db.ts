@@ -12,9 +12,19 @@ if (!connectionString || !connectionString.startsWith('postgres')) {
 const client = postgres(connectionString, { prepare: false });
 export const db = drizzle(client, { schema });
 
-// Seed default Master Administrator / Librarian if empty
+// Seed default Master Administrator / Librarian if empty & migrate missing columns
 async function seedInitialData() {
   try {
+    // Ensure email and phone columns exist
+    try {
+      await client`ALTER TABLE students ADD COLUMN IF NOT EXISTS email text;`;
+      await client`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email text;`;
+      await client`ALTER TABLE students ADD COLUMN IF NOT EXISTS phone text;`;
+      await client`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS phone text;`;
+    } catch (migErr) {
+      console.log('Database migration note:', migErr);
+    }
+
     const existing = await db.query.librarians.findFirst();
     if (!existing) {
       await db.insert(schema.librarians).values({

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Clock, AlertTriangle, CheckCircle2, Bookmark } from 'lucide-react';
+import { BookOpen, Clock, AlertTriangle, CheckCircle2, Bookmark, Loader2 } from 'lucide-react';
 import { IssuedBook, Student } from '../../types';
 import { formatDate } from '../../utils/dateFormatter';
 
@@ -45,7 +45,12 @@ export const MyBooks: React.FC<MyBooksProps> = ({ student }) => {
       </div>
 
       <div className="bg-white border border-blue-200 rounded-2xl overflow-hidden shadow-xs">
-        {issuedBooks.length === 0 ? (
+        {loading ? (
+          <div className="p-12 text-center flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-xs font-semibold text-slate-500 animate-pulse">Loading your borrowed books...</p>
+          </div>
+        ) : issuedBooks.length === 0 ? (
           <div className="p-12 text-center text-slate-500 text-xs">
             <Bookmark className="w-10 h-10 mx-auto mb-2 text-slate-400" />
             You currently have no books borrowed from the library.

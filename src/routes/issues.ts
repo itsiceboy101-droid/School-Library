@@ -20,6 +20,10 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
       let studentClass = "";
       let studentDiv = "";
       let studentRoll = "";
+      let studentEmail: string | null = null;
+      let teacherEmail: string | null = null;
+      let studentPhone: string | null = null;
+      let teacherPhone: string | null = null;
       
       if (ib.teacher_id) {
         const teacher = await db.query.teachers.findFirst({ where: eq(teachers.id, ib.teacher_id) });
@@ -27,6 +31,8 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
             studentName = teacher.name + " (Teacher)";
             studentCard = teacher.username;
             studentClass = teacher.assigned_class ? teacher.assigned_class : "Subject Teacher";
+            teacherEmail = teacher.email || null;
+            teacherPhone = teacher.phone || null;
         }
       } else if (ib.student_id) {
         const student = await db.query.students.findFirst({ where: eq(students.id, ib.student_id) });
@@ -36,6 +42,8 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
             studentClass = student.class;
             studentDiv = student.division;
             studentRoll = student.roll_no;
+            studentEmail = student.email || null;
+            studentPhone = student.phone || null;
         }
       }
 
@@ -60,6 +68,11 @@ issuesRouter.get('/', async (req: Request, res: Response) => {
         student_class: studentClass,
         student_division: studentDiv,
         student_roll_no: studentRoll,
+        email: teacherEmail || studentEmail || null,
+        student_email: studentEmail,
+        teacher_email: teacherEmail,
+        student_phone: studentPhone,
+        teacher_phone: teacherPhone,
         book_title: book ? book.title : "Unknown",
         book_author: book ? book.author : "",
         issue_date: ib.issue_date,

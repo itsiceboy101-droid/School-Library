@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserCheck, BookPlus, RefreshCw, GraduationCap, AlertCircle } from 'lucide-react';
+import { Search, UserCheck, BookPlus, RefreshCw, GraduationCap, AlertCircle, Loader2 } from 'lucide-react';
 import { Student } from '../../types';
 
 interface StudentSearchProps {
@@ -138,10 +138,11 @@ export const StudentSearch: React.FC<StudentSearchProps> = ({ onQuickIssue }) =>
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20"
+              disabled={loading}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 disabled:opacity-50"
             >
-              <Search className="w-3.5 h-3.5" />
-              Search Records
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <Search className="w-3.5 h-3.5" />}
+              {loading ? 'Searching...' : 'Search Records'}
             </button>
           </div>
         </form>
@@ -175,6 +176,7 @@ export const StudentSearch: React.FC<StudentSearchProps> = ({ onQuickIssue }) =>
                   <th className="px-6 py-3">Library Card</th>
                   <th className="px-6 py-3">Class & Division</th>
                   <th className="px-6 py-3">Roll No</th>
+                  <th className="px-6 py-3">Email Address</th>
                   <th className="px-6 py-3 text-right">Quick Action</th>
                 </tr>
               </thead>
@@ -196,6 +198,13 @@ export const StudentSearch: React.FC<StudentSearchProps> = ({ onQuickIssue }) =>
                       Class {student.class} - Div {student.division}
                     </td>
                     <td className="px-6 py-3.5 text-slate-500">#{student.roll_no}</td>
+                    <td className="px-6 py-3.5 text-slate-600">
+                      {student.email ? (
+                        <span className="text-blue-700 font-mono text-[11px]">{student.email}</span>
+                      ) : (
+                        <span className="text-slate-400 italic text-[10px]">None</span>
+                      )}
+                    </td>
                     <td className="px-6 py-3.5 text-right">
                       <button
                         onClick={() => onQuickIssue(student)}
