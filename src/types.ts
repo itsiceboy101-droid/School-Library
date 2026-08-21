@@ -109,11 +109,92 @@ export interface ReportSummary {
   total_books: number;
   total_copies: number;
   available_copies: number;
+  checked_out_copies?: number;
   issued: number;
   overdue: number;
+  due_today?: number;
+  today_issued?: number;
+  today_returned?: number;
   total_students: number;
+  total_teachers?: number;
   restricted_students_count: number;
+  total_all_time_issues?: number;
+  total_all_time_returns?: number;
   total_fines_collected?: number;
+}
+
+export interface AllTimeStats {
+  total_all_time_issues: number;
+  total_all_time_returns: number;
+  return_rate: number;
+  total_students: number;
+  total_teachers: number;
+  total_books: number;
+  total_copies: number;
+  available_copies: number;
+  issued_copies: number;
+  student_issues_count: number;
+  teacher_issues_count: number;
+  top_borrowed_books: Array<{
+    id: number;
+    title: string;
+    author: string;
+    category?: string;
+    total_copies: number;
+    available_copies: number;
+    borrow_count: number;
+  }>;
+  top_student_readers: Array<{
+    id: number;
+    name: string;
+    class: string;
+    division: string;
+    roll_no: string;
+    library_card_no: string;
+    email?: string | null;
+    borrow_count: number;
+  }>;
+  top_teacher_readers: Array<{
+    id: number;
+    name: string;
+    assigned_class?: string;
+    username: string;
+    email?: string | null;
+    borrow_count: number;
+  }>;
+  class_wise_distribution: Array<{
+    class_name: string;
+    count: number;
+  }>;
+  category_wise_distribution: Array<{
+    category: string;
+    count: number;
+  }>;
+  monthly_trends: Array<{
+    month: string;
+    issues: number;
+    returns: number;
+  }>;
+}
+
+export interface HistoryLogItem {
+  id: number;
+  borrower_name: string;
+  borrower_type: 'student' | 'teacher';
+  borrower_info: string;
+  email?: string | null;
+  phone?: string | null;
+  book_id: number;
+  book_title: string;
+  book_author: string;
+  book_category?: string;
+  issue_date: string;
+  due_date: string;
+  return_date?: string | null;
+  status: 'issued' | 'returned' | 'overdue';
+  days_held: number;
+  is_late: boolean;
+  issue_code?: string | null;
 }
 
 export interface IssueCode {

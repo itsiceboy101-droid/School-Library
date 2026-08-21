@@ -8,8 +8,8 @@ export interface SendEmailOptions {
 }
 
 export function isGmailConfigured(): boolean {
-  const user = process.env.GMAIL_USER || '9sunandanik9@gmail.com';
-  const pass = process.env.GMAIL_APP_PASSWORD || 'nrseqeupvvnkzeqo';
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
   return Boolean(user && pass);
 }
 
@@ -20,8 +20,8 @@ export function getGmailUser(): string {
 let transporter: nodemailer.Transporter | null = null;
 
 function getTransporter(): nodemailer.Transporter | null {
-  const user = (process.env.GMAIL_USER || '9sunandanik9@gmail.com').trim();
-  const pass = (process.env.GMAIL_APP_PASSWORD || 'nrseqeupvvnkzeqo').trim().replace(/\s+/g, '');
+  const user = (process.env.GMAIL_USER || '').trim();
+  const pass = (process.env.GMAIL_APP_PASSWORD || '').trim().replace(/\s+/g, '');
 
   if (!user || !pass) {
     return null;

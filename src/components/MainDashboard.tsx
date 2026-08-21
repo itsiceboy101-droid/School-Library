@@ -22,10 +22,12 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
   const [activeTab, setActiveTab] = useState<MainTab>('analytics');
   const [openAddLibrarian, setOpenAddLibrarian] = useState(false);
   const [openAddStudent, setOpenAddStudent] = useState(false);
+  const [openAddTeacher, setOpenAddTeacher] = useState(false);
   const [openEmailModal, setOpenEmailModal] = useState(false);
   const [deskSubTab, setDeskSubTab] = useState<'issue' | 'return' | 'issue-codes'>('issue');
 
   const handleAddTeacherClick = () => {
+    setOpenAddTeacher(true);
     setActiveTab('teachers');
   };
 
@@ -118,6 +120,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
                 setActiveTab(item.id);
                 setOpenAddLibrarian(false);
                 setOpenAddStudent(false);
+                setOpenAddTeacher(false);
               }}
               className={`flex-1 min-w-[130px] inline-flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-bold transition ${
                 isActive
@@ -137,7 +140,10 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
         {activeTab === 'analytics' && <ReportsManager />}
 
         {activeTab === 'teachers' && (
-          <TeachersManager onSuccessToast={onSuccessToast} />
+          <TeachersManager
+            onSuccessToast={onSuccessToast}
+            openAddModalInitially={openAddTeacher}
+          />
         )}
 
         {activeTab === 'librarians' && (

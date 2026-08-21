@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowDownLeft, AlertTriangle, Clock, RefreshCw, CheckCircle2, DollarSign, Layers, Search, Loader2 } from 'lucide-react';
+import { ArrowDownLeft, AlertTriangle, Clock, RefreshCw, CheckCircle2, DollarSign, Layers, Search, Loader2, Mail } from 'lucide-react';
 import { IssuedBook } from '../../types';
 import { formatDate } from '../../utils/dateFormatter';
+import { DirectEmailModal } from '../common/DirectEmailModal';
 
 interface ReturnBookProps {
   onSuccessToast: (msg: string) => void;
@@ -16,6 +17,8 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
   const [savingEdit, setSavingEdit] = useState(false);
   const [returnQtyMap, setReturnQtyMap] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedEmailItem, setSelectedEmailItem] = useState<IssuedBook | null>(null);
 
   const groupedIssuedList = React.useMemo(() => {
     const groups: Record<string, any> = {};
@@ -201,6 +204,17 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                             <span>• {item.student_class.startsWith('Class') ? item.student_class : `Class ${item.student_class}`}{item.student_division ? `-${item.student_division}` : ''}</span>
                           )}
                         </div>
+                        {item.email || item.student_email || item.teacher_email ? (
+                          <div className="text-[11px] text-blue-700 flex items-center gap-1 font-mono mt-1">
+                            <Mail className="w-3 h-3 text-blue-600 shrink-0" />
+                            <span className="truncate max-w-[190px]">{item.email || item.student_email || item.teacher_email}</span>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-slate-400 italic flex items-center gap-1 mt-1">
+                            <Mail className="w-3 h-3 text-slate-300 shrink-0" />
+                            <span>No email on profile</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-800">{item.book_title}</div>
@@ -265,6 +279,17 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedEmailItem(item);
+                              setIsEmailModalOpen(true);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition inline-flex items-center gap-1 border border-indigo-200"
+                            title="Send Email Notice"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            Email
+                          </button>
                           <button
                             onClick={() => handleEditClick(item)}
                             className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
@@ -359,6 +384,23 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
           </div>
         </div>
       )}
+
+      {/* Direct Email Modal */}
+      <DirectEmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => {
+          setIsEmailModalOpen(false);
+          setSelectedEmailItem(null);
+        }}
+        initialToEmail={selectedEmailItem?.email || selectedEmailItem?.student_email || selectedEmailItem?.teacher_email || ''}
+        initialSubject={selectedEmailItem ? (selectedEmailItem.status === 'overdue' ? `📚 Overdue Notice: "${selectedEmailItem.book_title}" — School Library` : `📚 Library Notice: "${selectedEmailItem.book_title}"`) : undefined}
+        initialMessage={selectedEmailItem ? `Dear ${selectedEmailItem.student_name},\n\nThis is a notice from the School Library regarding your borrowed book:\n📖 "${selectedEmailItem.book_title}"\n📅 Due Date: ${selectedEmailItem.due_date}${selectedEmailItem.status === 'overdue' ? ` (${selectedEmailItem.days_overdue} days overdue)` : ''}.\n\nPlease return this book to the circulation desk promptly to keep your borrowing privileges active.\n\n— School Library Administration\nEmail: library@school.com` : undefined}
+        studentId={selectedEmailItem?.student_id}
+        teacherId={selectedEmailItem?.teacher_id}
+        onEmailSent={(sentTo) => {
+          onSuccessToast(`Email notice delivered to ${sentTo}!`);
+        }}
+      />
       </div>
     </div>
   );

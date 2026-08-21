@@ -7,6 +7,8 @@ interface DirectEmailModalProps {
   initialToEmail?: string;
   initialSubject?: string;
   initialMessage?: string;
+  studentId?: number | null;
+  teacherId?: number | null;
   onEmailSent?: (sentTo: string) => void;
 }
 
@@ -16,6 +18,8 @@ export const DirectEmailModal: React.FC<DirectEmailModalProps> = ({
   initialToEmail,
   initialSubject,
   initialMessage,
+  studentId,
+  teacherId,
   onEmailSent,
 }) => {
   if (!isOpen) return null;
@@ -29,11 +33,13 @@ export const DirectEmailModal: React.FC<DirectEmailModalProps> = ({
   const [status, setStatus] = useState<{ configured: boolean; senderEmail: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ success: boolean; msg: string } | null>(null);
+  const [saveEmailToProfile, setSaveEmailToProfile] = useState(true);
 
   useEffect(() => {
     if (initialToEmail) setToEmail(initialToEmail);
     if (initialSubject) setSubject(initialSubject);
     if (initialMessage) setMessage(initialMessage);
+    setSaveEmailToProfile(true); // reset on open
   }, [initialToEmail, initialSubject, initialMessage, isOpen]);
 
   useEffect(() => {
@@ -62,6 +68,9 @@ export const DirectEmailModal: React.FC<DirectEmailModalProps> = ({
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
             <p style="font-size: 12px; color: #64748b;">School Library Portal System • ✉️ 9sunandanik9@gmail.com</p>
           </div>`,
+          saveEmailToProfile,
+          studentId,
+          teacherId,
         }),
       });
 
@@ -198,6 +207,17 @@ export const DirectEmailModal: React.FC<DirectEmailModalProps> = ({
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
+            {(studentId || teacherId) && (
+              <label className="flex items-center gap-2 mt-2 pt-1 px-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={saveEmailToProfile}
+                  onChange={(e) => setSaveEmailToProfile(e.target.checked)}
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-[11px] text-slate-600 font-medium select-none">Save this email address to their library profile</span>
+              </label>
+            )}
           </div>
 
           {/* Subject */}
@@ -235,7 +255,7 @@ export const DirectEmailModal: React.FC<DirectEmailModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={sending}
+              disabled={sending || (status && !status.configured)}
               className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-600/20"
             >
               {sending ? (

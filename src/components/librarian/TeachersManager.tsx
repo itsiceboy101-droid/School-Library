@@ -4,12 +4,13 @@ import { Teacher } from '../../types';
 
 interface TeachersManagerProps {
   onSuccessToast: (msg: string) => void;
+  openAddModalInitially?: boolean;
 }
 
 const CLASSES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 const DIVISIONS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast }) => {
+export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast, openAddModalInitially }) => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -17,6 +18,12 @@ export const TeachersManager: React.FC<TeachersManagerProps> = ({ onSuccessToast
 
   // Add Teacher Modal state
   const [showAddModal, setShowAddModal] = useState(false);
+
+  useEffect(() => {
+    if (openAddModalInitially) {
+      setShowAddModal(true);
+    }
+  }, [openAddModalInitially]);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
   const toggleTablePassword = (id: number) => setVisiblePasswords(prev => ({...prev, [id]: !prev[id]}));
   const [name, setName] = useState('');

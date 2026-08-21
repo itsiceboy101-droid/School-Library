@@ -344,7 +344,7 @@ notificationsRouter.get('/email/status', (req: Request, res: Response) => {
 // POST /api/notifications/email/send
 notificationsRouter.post('/email/send', async (req: Request, res: Response) => {
   try {
-    const { to, subject, html, text } = req.body;
+    const { to, subject, html, text, saveEmailToProfile, studentId, teacherId } = req.body;
     if (!to || !subject || (!html && !text)) {
       return res.status(400).json({ error: 'Recipient "to", "subject", and email content are required' });
     }
@@ -358,6 +358,23 @@ notificationsRouter.post('/email/send', async (req: Request, res: Response) => {
 
     if (!result.success) {
       return res.status(500).json({ error: result.error });
+    }
+    
+    // Save email to profile if requested
+    if (saveEmailToProfile) {
+      if (studentId) {
+        try {
+          await db.update(students).set({ email: String(to).trim() }).where(eq(students.id, Number(studentId)));
+        } catch (e) {
+          console.error('Failed to update student email:', e);
+        }
+      } else if (teacherId) {
+        try {
+          await db.update(teachers).set({ email: String(to).trim() }).where(eq(teachers.id, Number(teacherId)));
+        } catch (e) {
+          console.error('Failed to update teacher email:', e);
+        }
+      }
     }
 
     res.json({
