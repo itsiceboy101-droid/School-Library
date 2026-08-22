@@ -403,13 +403,12 @@ notificationsRouter.post('/email/send-overdue', async (req: Request, res: Respon
       return res.status(404).json({ error: 'Issue record not found' });
     }
 
-    const book = await db.query.books.findFirst({
-      where: eq(books.id, ib.book_id),
-    });
+    const book = await db.query.books.findFirst({ where: eq(books.id, ib.book_id) });
 
     let borrowerName = 'Student';
     let cardNo = '';
     let targetEmail = recipientEmail || '';
+    let classTeacherEmail = '';
 
     if (ib.teacher_id) {
       const teacher = await db.query.teachers.findFirst({
@@ -432,6 +431,21 @@ notificationsRouter.post('/email/send-overdue', async (req: Request, res: Respon
         if (!targetEmail && student.email) {
           targetEmail = student.email;
         }
+
+        try {
+          const classTeacher = await db.query.teachers.findFirst({
+            where: and(
+              eq(teachers.assigned_class, student.class),
+              eq(teachers.assigned_division, student.division)
+            ),
+          });
+          if (classTeacher && classTeacher.email) {
+            classTeacherEmail = classTeacher.email;
+          }
+        } catch (e) {
+          console.error("Failed to fetch class teacher", e);
+        }
+
         if (recipientEmail && (!student.email || req.body.saveEmailToProfile)) {
           try {
             await db.update(students).set({ email: String(recipientEmail).trim() }).where(eq(students.id, student.id));
@@ -464,6 +478,20 @@ notificationsRouter.post('/email/send-overdue', async (req: Request, res: Respon
       subject: `[Overdue Notice] "${book ? book.title : 'Library Book'}" - School Library`,
       html,
     });
+
+    // Auto send to class teacher without alerting user if it fails
+    if (classTeacherEmail) {
+      try {
+        await sendEmail({
+          to: classTeacherEmail,
+          subject: `[Class Update] Overdue Notice for Student ${borrowerName}`,
+          html: `<p style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #475569; padding: 16px; background-color: #f8fafc; border-radius: 8px; margin-bottom: 20px;"><strong>Notice to Class Teacher:</strong> This is an automated copy of an overdue library notice sent to your student <strong>${borrowerName}</strong>.</p>${html}`,
+        });
+      } catch (err) {
+        console.error("Error auto-sending to class teacher:", err);
+      }
+    }
+
 
     if (!result.success) {
       return res.status(500).json({ error: result.error });

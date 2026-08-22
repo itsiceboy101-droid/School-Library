@@ -25,7 +25,8 @@ import {
   Sparkles,
   ChevronRight,
   ShieldAlert,
-  UserCheck
+  UserCheck,
+  UserX
 } from 'lucide-react';
 import { ReportSummary, AllTimeStats, HistoryLogItem } from '../../types';
 import { formatDate } from '../../utils/dateFormatter';
@@ -442,63 +443,70 @@ export const ReportsManager: React.FC = () => {
         <div className="space-y-6">
           {/* Live KPI Metric Grid */}
           {summary && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
               <div className="bg-white border border-blue-200 p-4 rounded-2xl shadow-xs">
                 <div className="text-xs font-semibold text-slate-500 flex items-center justify-between mb-2">
-                  <span>Active Loans</span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Total Books</span>
+                  <BookOpen className="w-4 h-4 text-indigo-600" />
                 </div>
-                <div className="text-2xl font-black text-emerald-600">{summary.issued}</div>
-                <div className="text-[10px] text-slate-500 mt-1 font-medium">Currently with borrowers</div>
+                <div className="text-2xl font-black text-slate-900">{summary.total_books}</div>
+                <div className="text-[10px] text-slate-500 mt-1">Unique catalog titles</div>
+              </div>
+
+              <div className="bg-white border border-blue-200 p-4 rounded-2xl shadow-xs">
+                <div className="text-xs font-semibold text-slate-500 flex items-center justify-between mb-2">
+                  <span>Physical Copies</span>
+                  <Layers className="w-4 h-4 text-purple-600" />
+                </div>
+                <div className="text-2xl font-black text-slate-900 flex items-baseline gap-2">
+                  {summary.available_copies} <span className="text-base text-slate-400 font-bold">/ {summary.total_copies}</span>
+                </div>
+                <div className="text-[10px] text-slate-500 mt-1">Ready for checkout</div>
+              </div>
+
+              <div className="bg-white border border-blue-200 p-4 rounded-2xl shadow-xs">
+                <div className="text-xs font-semibold text-slate-500 flex items-center justify-between mb-2">
+                  <span>Issued Books</span>
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="text-2xl font-black text-blue-600">{summary.issued}</div>
+                <div className="text-[10px] text-slate-500 mt-1">Currently with borrowers</div>
               </div>
 
               <div className="bg-white border border-rose-200 p-4 rounded-2xl shadow-xs bg-rose-50/20">
                 <div className="text-xs font-semibold text-rose-700 flex items-center justify-between mb-2">
-                  <span>Overdue Items</span>
+                  <span>Overdue Books</span>
                   <AlertTriangle className="w-4 h-4 text-rose-600" />
                 </div>
                 <div className="text-2xl font-black text-rose-600">{summary.overdue}</div>
-                <div className="text-[10px] text-rose-600 font-semibold mt-1">Pending return</div>
+                <div className="text-[10px] text-rose-600 mt-1 font-bold">Pending return</div>
               </div>
 
               <div className="bg-white border border-blue-200 p-4 rounded-2xl shadow-xs">
                 <div className="text-xs font-semibold text-slate-500 flex items-center justify-between mb-2">
-                  <span>Due Today</span>
-                  <Calendar className="w-4 h-4 text-amber-500" />
+                  <span>Total Students</span>
+                  <Users className="w-4 h-4 text-sky-600" />
                 </div>
-                <div className="text-2xl font-black text-slate-900">{summary.due_today || 0}</div>
-                <div className="text-[10px] text-amber-600 font-medium mt-1">Expected returns today</div>
+                <div className="text-2xl font-black text-slate-900">{summary.total_students}</div>
+                <div className="text-[10px] text-slate-500 mt-1">Registered library members</div>
               </div>
 
               <div className="bg-white border border-blue-200 p-4 rounded-2xl shadow-xs">
                 <div className="text-xs font-semibold text-slate-500 flex items-center justify-between mb-2">
-                  <span>Today's Activity</span>
-                  <Sparkles className="w-4 h-4 text-blue-600" />
+                  <span>Total Teachers</span>
+                  <Users className="w-4 h-4 text-emerald-600" />
                 </div>
-                <div className="text-base font-bold text-slate-900 flex items-center gap-1.5 mt-1">
-                  <span className="text-emerald-600">+{summary.today_issued || 0}</span>
-                  <span className="text-slate-300">/</span>
-                  <span className="text-blue-600">-{summary.today_returned || 0}</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-1">Issues / Returns today</div>
+                <div className="text-2xl font-black text-slate-900">{summary.total_teachers || 0}</div>
+                <div className="text-[10px] text-slate-500 mt-1">Registered faculty members</div>
               </div>
 
-              <div className="bg-white border border-blue-200 p-4 rounded-2xl shadow-xs">
-                <div className="text-xs font-semibold text-slate-500 flex items-center justify-between mb-2">
-                  <span>Available Copies</span>
-                  <Layers className="w-4 h-4 text-blue-600" />
+              <div className="bg-white border border-rose-200 p-4 rounded-2xl shadow-xs bg-rose-50/20">
+                <div className="text-xs font-semibold text-rose-700 flex items-center justify-between mb-2">
+                  <span>Restricted Students</span>
+                  <UserX className="w-4 h-4 text-rose-600" />
                 </div>
-                <div className="text-2xl font-black text-slate-900">{summary.available_copies}</div>
-                <div className="text-[10px] text-slate-500 mt-1 font-medium">Of {summary.total_copies} total physical copies</div>
-              </div>
-
-              <div className="bg-white border border-blue-200 p-4 rounded-2xl shadow-xs">
-                <div className="text-xs font-semibold text-slate-500 flex items-center justify-between mb-2">
-                  <span>Restricted Users</span>
-                  <ShieldAlert className="w-4 h-4 text-rose-500" />
-                </div>
-                <div className="text-2xl font-black text-rose-600">{summary.restricted_students_count}</div>
-                <div className="text-[10px] text-slate-500 mt-1">2-Week borrowing penalty</div>
+                <div className="text-2xl font-black text-rose-600">{summary.restricted_students_count || 0}</div>
+                <div className="text-[10px] text-rose-600 mt-1 font-bold">Borrowing ban active</div>
               </div>
             </div>
           )}
@@ -510,7 +518,7 @@ export const ReportsManager: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-rose-500" />
+                    <AlertTriangle className="w-4 h-4 text-rose-500" />
                     Overdue Books Audit List ({filteredOverdueList.length})
                   </h3>
                   <p className="text-xs text-rose-600 font-semibold mt-0.5">
@@ -844,7 +852,7 @@ export const ReportsManager: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Top 10 Most Borrowed Books */}
               <div className="bg-white border border-blue-200 rounded-2xl p-5 shadow-xs">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
                     <Award className="w-4 h-4 text-amber-500" />
                     Top Borrowed Books
@@ -861,7 +869,7 @@ export const ReportsManager: React.FC = () => {
                     {allTimeStats.top_borrowed_books.slice(0, 5).map((book, idx) => (
                       <div key={book.id} className="flex items-center justify-between text-xs pb-2.5 border-b border-blue-50 last:border-0 last:pb-0">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
                             idx === 0 ? 'bg-amber-100 text-amber-800 font-extrabold' :
                             idx === 1 ? 'bg-slate-200 text-slate-700' :
                             idx === 2 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'
@@ -886,7 +894,7 @@ export const ReportsManager: React.FC = () => {
 
               {/* Top Student Readers */}
               <div className="bg-white border border-blue-200 rounded-2xl p-5 shadow-xs">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-sky-600" />
                     Top Student Readers
@@ -903,7 +911,7 @@ export const ReportsManager: React.FC = () => {
                     {allTimeStats.top_student_readers.slice(0, 5).map((stu, idx) => (
                       <div key={stu.id} className="flex items-center justify-between text-xs pb-2.5 border-b border-blue-50 last:border-0 last:pb-0">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-800 flex items-center justify-center font-bold text-[10px] shrink-0">
+                          <span className="w-4 h-4 rounded-full bg-sky-100 text-sky-800 flex items-center justify-center font-bold text-[10px] shrink-0">
                             {idx + 1}
                           </span>
                           <div className="min-w-0">
@@ -924,7 +932,7 @@ export const ReportsManager: React.FC = () => {
 
               {/* Class-wise Borrowing Leaderboard */}
               <div className="bg-white border border-blue-200 rounded-2xl p-5 shadow-xs">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
                     <School className="w-4 h-4 text-teal-600" />
                     Class-wise Activity
@@ -968,7 +976,7 @@ export const ReportsManager: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
                     All-Time Lending History Ledger ({filteredHistoryLogs.length})
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -983,7 +991,7 @@ export const ReportsManager: React.FC = () => {
                   <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Search ledger by borrower, book title, card no, or issue code..."
+                    placeholder="Search ledger by borrower, book title, card no, or email..."
                     value={historySearch}
                     onChange={(e) => setHistorySearch(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-blue-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500"

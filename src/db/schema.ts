@@ -24,6 +24,7 @@ export const students = pgTable('students', {
   library_card_no: text('library_card_no').notNull(),
   email: text('email'),
   phone: text('phone'),
+  manual_ban_lift_date: text('manual_ban_lift_date'),
   password_hash: text('password_hash').notNull(),
   created_at: timestamp('created_at').defaultNow(),
 });

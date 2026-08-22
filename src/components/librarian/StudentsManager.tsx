@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Trash2, Search, CreditCard, Lock, AlertCircle, X, Pencil, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
+import { Users, UserPlus, Trash2, Search, CreditCard, Lock, AlertCircle, X, Pencil, Eye, EyeOff, Loader2, CheckCircle2, Mail } from 'lucide-react';
 import { Student } from '../../types';
 
 interface StudentsManagerProps {
@@ -94,7 +94,7 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
     setIsModalOpen(true);
   };
 
-  const toggleTablePassword = (id: number) => {
+  const handleLiftBan = async (id: number) => { if(!confirm("Are you sure you want to lift this students borrowing ban?")) return; try { const res = await fetch(`/api/students/${id}/lift-ban`, { method: "POST" }); if(res.ok) { fetchStudents(); } } catch (err) { console.error(err); } }; const toggleTablePassword = (id: number) => {
     setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -259,14 +259,17 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                 {filteredStudents.map((s) => {
                   const isPassShown = !!visiblePasswords[s.id];
                   return (
-                    <tr key={s.id} className="hover:bg-blue-50/50 transition">
+                    <tr key={s.id} className={s.is_restricted ? "bg-rose-50 hover:bg-rose-100 transition" : "hover:bg-blue-50/50 transition"}>
                       <td className="px-6 py-3.5 font-bold text-slate-900">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-xs shrink-0">
+                          <div className={s.is_restricted ? "w-8 h-8 rounded-xl bg-rose-100 text-rose-700 border border-rose-200 flex items-center justify-center font-bold text-xs shrink-0" : "w-8 h-8 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold text-xs shrink-0"}>
                             {s.name.charAt(0)}
                           </div>
                           <div>
-                            <div>{s.name}</div>
+                            <div className="flex items-center gap-2">
+                                {s.name}
+                                {s.is_restricted && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-600 text-white uppercase tracking-wider">Restricted</span>}
+                            </div>
                             {s.email ? (
                               <div className="text-[11px] font-mono text-blue-700 flex items-center gap-1 font-normal mt-0.5">
                                 <Mail className="w-3 h-3 text-blue-600 shrink-0" />
@@ -307,6 +310,16 @@ export const StudentsManager: React.FC<StudentsManagerProps> = ({ onSuccessToast
                       </td>
                       <td className="px-6 py-3.5 text-right">
                         <div className="inline-flex items-center gap-2">
+                          {s.is_restricted && (
+                            <button
+                              onClick={() => handleLiftBan(s.id)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 text-xs transition font-semibold"
+                              title="Manually Lift Ban"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Lift Ban
+                            </button>
+                          )}
                           <button
                             onClick={() => openEditModal(s)}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 text-xs transition font-semibold"

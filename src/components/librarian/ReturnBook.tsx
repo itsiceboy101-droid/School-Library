@@ -176,7 +176,6 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                   <th className="px-6 py-3.5">Borrower Details</th>
                   <th className="px-6 py-3.5">Book Title</th>
                   <th className="px-6 py-3.5 text-center">No. of Copies</th>
-                  <th className="px-6 py-3.5 text-center">Issue Code(s)</th>
                   <th className="px-6 py-3.5">Issue & Due Dates</th>
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5">Borrowing Restriction Penalty</th>
@@ -231,21 +230,6 @@ export const ReturnBook: React.FC<ReturnBookProps> = ({ onSuccessToast }) => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        {item.copies > 1 ? (
-                          <select className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded px-2 py-1 focus:outline-none">
-                            {item.issue_codes.map((code: string | null, idx: number) => (
-                              <option key={idx} value={code || ''}>
-                                {code ? `🔑 ${code}` : 'N/A'}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="font-mono text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                            {item.issue_codes[0] ? `🔑 ${item.issue_codes[0]}` : 'N/A'}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-slate-600">Issue: {formatDate(item.issue_date)}</div>
                         <div className={`font-semibold mt-0.5 ${isOverdue ? 'text-rose-600' : 'text-slate-500'}`}>
                           Due: {formatDate(item.due_date)}

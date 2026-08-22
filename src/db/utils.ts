@@ -52,11 +52,16 @@ export async function getStudentRestrictionStatus(studentId: number): Promise<{
       const banUntilStr = returnD.toISOString().split("T")[0];
 
       if (today < banUntilStr) {
-        return {
-          isRestricted: true,
-          reason: `Returned a book late on ${mostRecentLate.return_date}. 2-week borrowing ban in effect.`,
-          untilDate: banUntilStr,
-        };
+        const studentRecord = await db.query.students.findFirst({ where: eq(students.id, studentId) });
+        if (studentRecord?.manual_ban_lift_date && studentRecord.manual_ban_lift_date >= mostRecentLate.return_date) {
+           // Ban lifted
+        } else {
+          return {
+            isRestricted: true,
+            reason: `Returned a book late on ${mostRecentLate.return_date}. 2-week borrowing ban in effect.`,
+            untilDate: banUntilStr,
+          };
+        }
       }
     }
   }

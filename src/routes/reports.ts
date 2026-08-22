@@ -57,8 +57,8 @@ reportsRouter.get('/summary', async (req: Request, res: Response) => {
           returnD.setDate(returnD.getDate() + 14);
           const banUntilStr = returnD.toISOString().split('T')[0];
 
-          if (today < banUntilStr) {
-            restricted_students_count++;
+          if (today < banUntilStr) { if (s.manual_ban_lift_date && s.manual_ban_lift_date >= mostRecentLate.return_date) { } else {
+            restricted_students_count++; }
           }
         }
       }

@@ -21,6 +21,7 @@ async function seedInitialData() {
       await client`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS email text;`;
       await client`ALTER TABLE students ADD COLUMN IF NOT EXISTS phone text;`;
       await client`ALTER TABLE teachers ADD COLUMN IF NOT EXISTS phone text;`;
+      await client`ALTER TABLE students ADD COLUMN IF NOT EXISTS manual_ban_lift_date text;`;
     } catch (migErr) {
       console.log('Database migration note:', migErr);
     }

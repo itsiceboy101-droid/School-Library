@@ -58,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : userType === 'teacher'
                 ? 'Class Student Roster & Catalog Search'
                 : userType === 'student'
-                ? 'My Borrowed Books & Fine Status'
+                ? 'My Borrowed Books & Account Status'
                 : 'Central School Library System'}
             </p>
           </div>

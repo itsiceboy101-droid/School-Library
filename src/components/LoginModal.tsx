@@ -159,9 +159,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     id="input-student-card"
                     type="text"
                     value={cardNo}
-                    onChange={(e) => setCardNo(e.target.value.replace(/\s+/g, '-').toUpperCase())}
-                    placeholder="e.g. STU101"
-                    className="w-full pl-9 pr-3 py-2.5 bg-white/80 border border-blue-200 rounded-xl text-sm text-slate-800 placeholder-slate-400/60 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 uppercase font-semibold"
+                    onChange={(e) => setCardNo(e.target.value)}
+                    placeholder="e.g. 12346 or KUNAL or STU-03"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white/80 border border-blue-200 rounded-xl text-sm text-slate-800 placeholder-slate-400/60 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 font-semibold"
                   />
                 </div>
               </div>

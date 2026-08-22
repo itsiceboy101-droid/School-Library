@@ -251,7 +251,6 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                   <th className="px-6 py-3.5">Title & Author</th>
                   <th className="px-6 py-3.5">Category</th>
                   <th className="px-6 py-3.5">ISBN</th>
-                  <th className="px-6 py-3.5 text-center">Issue Codes</th>
                   <th className="px-6 py-3.5">Availability Status</th>
                   <th className="px-6 py-3.5 text-right">Manage</th>
                 </tr>
@@ -274,19 +273,6 @@ export const BooksManager: React.FC<BooksManagerProps> = ({ onSuccessToast }) =>
                       </td>
                       <td className="px-6 py-4 font-mono text-slate-500 text-[11px]">
                         {b.isbn || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {(() => {
-                          const codes = issueCodes.filter(c => c.book_id === b.id);
-                          if (codes.length === 0) return <span className="text-[11px] font-medium text-slate-400">N/A</span>;
-                          return (
-                            <select className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded px-2 py-1 focus:outline-none max-w-[100px]">
-                              {codes.map(c => (
-                                <option key={c.id} value={c.full_code}>🔑 {c.full_code}</option>
-                              ))}
-                            </select>
-                          );
-                        })()}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">

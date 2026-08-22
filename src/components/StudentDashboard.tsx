@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, History, DollarSign, Search } from 'lucide-react';
+import { BookOpen, History, ShieldCheck, Search } from 'lucide-react';
 import { Student } from '../types';
 import { MyBooks } from './student/MyBooks';
 import { BorrowingHistory } from './student/BorrowingHistory';
@@ -10,7 +10,7 @@ interface StudentDashboardProps {
   student: Student;
 }
 
-type StudentTab = 'myBooks' | 'history' | 'fines' | 'catalog';
+type StudentTab = 'myBooks' | 'history' | 'status' | 'catalog';
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ student }) => {
   const [activeTab, setActiveTab] = useState<StudentTab>('myBooks');
@@ -18,7 +18,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ student }) =
   const navItems: { id: StudentTab; label: string; icon: React.ReactNode }[] = [
     { id: 'myBooks', label: 'My Borrowed Books', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'history', label: 'Borrowing History', icon: <History className="w-4 h-4" /> },
-    { id: 'fines', label: 'Fines & Account', icon: <DollarSign className="w-4 h-4" /> },
+    { id: 'status', label: 'Borrowing Status & Policy', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'catalog', label: 'Search Catalog', icon: <Search className="w-4 h-4" /> },
   ];
 
@@ -77,7 +77,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ student }) =
       <div>
         {activeTab === 'myBooks' && <MyBooks student={student} />}
         {activeTab === 'history' && <BorrowingHistory student={student} />}
-        {activeTab === 'fines' && <StudentFines student={student} />}
+        {activeTab === 'status' && <StudentFines student={student} />}
         {activeTab === 'catalog' && <CatalogSearch />}
       </div>
     </div>

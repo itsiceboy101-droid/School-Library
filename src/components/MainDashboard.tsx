@@ -8,7 +8,7 @@ import { TeachersManager } from './librarian/TeachersManager';
 import { BooksManager } from './librarian/BooksManager';
 import { IssueBook } from './librarian/IssueBook';
 import { ReturnBook } from './librarian/ReturnBook';
-import { IssueCodeManager } from './librarian/IssueCodeManager';
+
 import { DirectEmailModal } from './common/DirectEmailModal';
 
 interface MainDashboardProps {
@@ -182,24 +182,12 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({ user, onSuccessToa
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
-              >
-                Return Book
-              </button>
-              <button
-                onClick={() => setDeskSubTab('issue-codes')}
-                className={`flex-1 min-w-[140px] py-2 rounded-xl text-xs font-bold transition ${
-                  deskSubTab === 'issue-codes'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                4-Digit Issue Codes
-              </button>
+              >                Return Book              </button>
             </div>
 
             {deskSubTab === 'issue' && <IssueBook onSuccessToast={onSuccessToast} />}
             {deskSubTab === 'return' && <ReturnBook onSuccessToast={onSuccessToast} />}
-            {deskSubTab === 'issue-codes' && <IssueCodeManager onSuccessToast={onSuccessToast} />}
+            
           </div>
         )}
       </div>
