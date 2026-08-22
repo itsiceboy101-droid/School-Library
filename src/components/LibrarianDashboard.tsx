@@ -8,6 +8,7 @@ import { StudentsManager } from './librarian/StudentsManager';
 import { TeachersManager } from './librarian/TeachersManager';
 import { BooksManager } from './librarian/BooksManager';
 import { ReportsManager } from './librarian/ReportsManager';
+import { IssueCodeManager } from './librarian/IssueCodeManager';
 
 import { DirectEmailModal } from './common/DirectEmailModal';
 
@@ -145,6 +146,17 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ user, on
                 <ArrowDownLeft className="w-4 h-4 inline-block mr-1" />
                 Return Book
               </button>
+              <button
+                onClick={() => setDeskSubTab('issue-codes')}
+                className={`flex-1 min-w-[100px] py-2 rounded-xl text-xs font-bold transition ${
+                  deskSubTab === 'issue-codes'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <KeyRound className="w-4 h-4 inline-block mr-1" />
+                Issue Codes
+              </button>
             </div>
 
             {deskSubTab === 'issue' && (
@@ -154,6 +166,7 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ user, on
               />
             )}
             {deskSubTab === 'return' && <ReturnBook onSuccessToast={onSuccessToast} />}
+            {deskSubTab === 'issue-codes' && <IssueCodeManager onSuccessToast={onSuccessToast} />}
             
           </div>
         )}
